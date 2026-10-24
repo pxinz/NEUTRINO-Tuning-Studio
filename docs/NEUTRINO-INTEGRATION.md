@@ -112,6 +112,16 @@ the RIFF header for duration/channels/bit depth and decodes it with Web Audio
 for playback. The workspace copy remains the authoritative render until the
 next render overwrites it; users should export takes they want to keep.
 
+## Single-phrase prediction (`-p`)
+
+Tau also exposes `-p N` (one phrase) and `-i phrases.txt` (phrase trace). A phrase
+render writes phrase-sized F0/melspec/WAV while the timing file remains full. When
+combined with skip flags, the F0/melspec inputs must be trimmed to the phrase.
+
+This was verified, but phrase splicing is phase-sensitive and is not enabled in
+the UI yet. Measurements, caveats and the proposed pitch-only implementation are
+in [INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
+
 ## Render modes
 
 The UI chooses one of three modes from hashes stored in the project:

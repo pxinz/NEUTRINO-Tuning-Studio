@@ -130,6 +130,20 @@ The Chinese UI copy was revised after review:
 - replaced the trademark claim in the non-affiliation notice with an accurate
   description of the relationship.
 
+## Incremental phrase probe
+
+Tested on Tau v3.2.2 with sample1/MERROW:
+
+- `-p 1` produced 4.83 s / 483 frames in 4.84 s; full render was 43.2 s in 11.84 s.
+- `-p 1 --skip-*` vocoded the same phrase in 1.07 s; full vocode took 3.27 s.
+- `-i` phrase map format and frame offsets were verified; `-p` indexes include
+  silence lines.
+- Full renders are not sample-identical: WAV correlation between two full runs
+  was -0.066, while F0/melspec correlation was 0.990/0.993. Phrase splicing
+  therefore requires crossfades; no UI support yet.
+
+Details: [INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
+
 ## Brand asset
 
 The supplied “TS for NEUTRINO” artwork is used only for the executable,

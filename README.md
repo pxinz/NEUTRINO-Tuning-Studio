@@ -18,6 +18,7 @@
 - **音高调声**：绘制 F0 曲线、直线、平滑、颤音、移调、按音符自动修正；修改通常只需重跑声码器，比完整渲染更快。
 - **动态包络**：按时间绘制 dB 包络，应用于试听和导出（人声或混音）。
 - **渲染管理**：自动检测 NEUTRINO 与歌声库，选择主/辅助声库、StyleShift、移调、线程、GPU、采样率、位深；实时进度与日志；取消渲染。
+- **增量重渲染**：已支持按阶段复用 `timing/F0/melspec` 的阶段级重渲染；NEUTRINO 的 `-p` 单乐句渲染已完成可行性验证，单乐句拼接受声码器相位影响，尚未并入 UI，详见 [增量渲染调研](docs/INCREMENTAL-RENDERING.md)。
 - **工程与音频**：`.ntstudio` 工程保存乐谱、时序、F0、动态、参考曲与渲染记录；参考曲试听/对齐；WAV/混音导出；播放、循环、缩放、自动跟随。
 - **跨平台与三语**：Windows、macOS、Linux 构建配置；中文/英文/日文完整界面。
 - **克制的品牌呈现**：程序图标只用于可执行文件、安装包、任务栏与窗口；应用界面内仅显示文字品牌，不展示图标。
@@ -110,4 +111,4 @@ neutrino.exe full.lab timing.lab output.f0 output.melspec output.wav model/MERRO
 - NEUTRINO 与歌声库：© SHACHI / STUDIO NEUTRINO 及各权利人；使用、发布作品前请阅读对应 EULA 与歌声库许可。
 - Electron、React、Vite、Zustand、i18next、fast-xml-parser、pako、midi-file、lucide-react 等开源项目。
 
-更多文档：[NEUTRINO 集成说明](docs/NEUTRINO-INTEGRATION.md) · [架构](docs/ARCHITECTURE.md) · [测试报告](docs/TEST-REPORT.md) · [macOS 构建](docs/MACOS.md) · [VST3 路线图](docs/VST3-ROADMAP.md)。
+更多文档：[NEUTRINO 集成说明](docs/NEUTRINO-INTEGRATION.md) · [架构](docs/ARCHITECTURE.md) · [测试报告](docs/TEST-REPORT.md) · [增量渲染调研](docs/INCREMENTAL-RENDERING.md) · [macOS 构建](docs/MACOS.md) · [VST3 路线图](docs/VST3-ROADMAP.md)。
