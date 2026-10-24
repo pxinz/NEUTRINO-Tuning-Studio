@@ -1,6 +1,6 @@
 # Verification report
 
-Date of verification: 2026-10-24 · build 1.0.1
+Date of verification: 2026-10-24 · build 1.1.0
 
 ## Windows host
 
@@ -19,7 +19,7 @@ Date of verification: 2026-10-24 · build 1.0.1
 | --- | --- |
 | First-run engine detection | PASS — found Tau v3.2.2 and 6 models |
 | Demo project | PASS — 29 notes, 3 phrases, 19.8 s score |
-| Full render (GPU, `-m`) | PASS — 24.0 s WAV in about 11 s |
+| Full render (GPU, `-m`) | PASS — 21.6 s WAV in about 12 s |
 | Timing edit → re-render | PASS — `--skip-timing`, mode logged as timing; pitch edits retained |
 | Pitch edit → vocode-only re-render | PASS — `--skip-timing --skip-f0 --skip-melspec` |
 | Project save | PASS — `.ntstudio` with F0 base64, timing and render paths |
@@ -36,14 +36,16 @@ Date of verification: 2026-10-24 · build 1.0.1
 | Log drawer with fixed note row height | PASS — note height 23 CSS px before/after opening log; vertical scrollbar appears |
 | Unsaved close prompt (save/discard/cancel) | PASS |
 | Packaged Windows app (unpacked) | PASS — launched via Playwright with a fresh user data directory |
-| Packaged Windows 1.0.1 real render | PASS — detected engine/models, rendered the demo, 21.6 s audio, no leading bar |
+| Packaged Windows 1.1.0 real render | PASS — detected engine/models, rendered the demo, 21.6 s audio, no leading bar |
 | Installer/portable artifacts | PASS — NSIS and portable EXE produced; associated 32 px icon verified |
-| Unit tests | PASS — 10 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics) |
+| Unit tests | PASS — 15 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics, phrase parsing/splicing, project phrase persistence) |
 | Playback alignment | PASS — rendered demo first voiced frame 0.01 s; timing starts `0 100000 pau`; no one-bar lead |
 | Light-mode render progress | PASS — running percentage computed color `rgb(15,23,42)` on `rgb(238,243,250)` |
 | Pencil drag | PASS — drag creates one note with extended duration |
 | Eraser drag | PASS — drag across a pitch row removed multiple notes |
 | Overlap feedback | PASS — warning banner shown and overlapping notes outlined red |
+| Phrase incremental render | PASS — imported sample1 (60 notes), edited pitch in phrase 1, UI switched to 局部重渲染; phrase 1 vocoded with `-p 1`; only 434,006 samples inside phrase 1 changed, 0 samples outside; audio reloaded with no errors |
+| Phrase unit tests | PASS — phrase parser, dirty phrase detection, PCM16 splice/crossfade, project phrase persistence (5 tests) |
 
 ### Render log highlights
 
@@ -77,8 +79,8 @@ load models : (vocoder model only)
 | Fixed piano-roll height and vertical scrollbar | PASS |
 | Log drawer open/close | PASS |
 | Packaged unpacked Linux app | PASS — launched under WSLg via Playwright |
-| AppImage 1.0.1 (115 MB) | PASS — launched with `APPIMAGE_EXTRACT_AND_RUN=1` under WSLg; light theme checked |
-| deb package 1.0.1 (89 MB) | PASS — built successfully with maintainer metadata |
+| AppImage 1.1.0 (115 MB) | PASS — launched with `APPIMAGE_EXTRACT_AND_RUN=1` under WSLg; light theme checked |
+| deb package 1.1.0 (89 MB) | PASS — built successfully with maintainer metadata |
 | Renderer console errors | none |
 
 The WSL environment used for GUI verification did not have NEUTRINO installed or
@@ -92,7 +94,7 @@ untested environment in the README.
 A cross-built **arm64 app zip** was produced on WSL with `@electron/packager`,
 then ad-hoc signed with `rcodesign`:
 
-`release/mac/NEUTRINO-Tuning-Studio-1.0.1-macOS-arm64-unsigned.zip`
+`release/mac/NEUTRINO-Tuning-Studio-1.1.0-macOS-arm64-unsigned.zip`
 
 Inspected:
 
@@ -110,8 +112,8 @@ on Windows (`Build for macOS is supported only on macOS`).
 
 ## Packaging
 
-- Windows: `NEUTRINO Tuning Studio Setup 1.0.1.exe` (NSIS) and
-  `NEUTRINO Tuning Studio 1.0.1.exe` (portable) are produced successfully.
+- Windows: `NEUTRINO Tuning Studio Setup 1.1.0.exe` (NSIS) and
+  `NEUTRINO Tuning Studio 1.1.0.exe` (portable) are produced successfully.
 - Linux: AppImage and deb were built in the WSL environment under
   `release/linux/`; both the unpacked app and the AppImage were launched under
   WSLg.
@@ -140,7 +142,7 @@ Tested on Tau v3.2.2 with sample1/MERROW:
   silence lines.
 - Full renders are not sample-identical: WAV correlation between two full runs
   was -0.066, while F0/melspec correlation was 0.990/0.993. Phrase splicing
-  therefore requires crossfades; no UI support yet.
+  therefore uses a 30 ms crossfade. The UI now exposes this as 局部重渲染.
 
 Details: [INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
 
@@ -150,4 +152,6 @@ The supplied “TS for NEUTRINO” artwork is used only for the executable,
 installer, taskbar/window icons and documentation. It is not displayed inside the
 application UI. Icon generation uses nearest-neighbour scaling with responsive
 crops (TS only at 16–48 px, TS for at 64 px, full lockup at 128 px and above).
+
+
 

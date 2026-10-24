@@ -2,7 +2,7 @@ export type Language = 'auto' | 'zh' | 'en' | 'ja';
 export type Theme = 'dark' | 'light' | 'system';
 export type EditorTab = 'score' | 'timing' | 'pitch' | 'dynamics';
 export type Tool = 'select' | 'pencil' | 'eraser' | 'line' | 'smooth' | 'vibrato';
-export type RenderMode = 'full' | 'timing' | 'vocode';
+export type RenderMode = 'full' | 'timing' | 'vocode' | 'phrase';
 export type RenderStatus = 'idle' | 'running' | 'done' | 'error';
 
 export interface WindowBounds {
@@ -158,6 +158,17 @@ export interface StoredPitch {
   timingHash: string;
 }
 
+export interface PhraseInfo {
+  /** Index passed to NEUTRINO's `-p` flag (includes silence rows). */
+  index: number;
+  /** Start frame at 100 fps. */
+  startFrame: number;
+  /** Exclusive end frame at 100 fps. */
+  endFrame: number;
+  sung: boolean;
+  lyric?: string;
+}
+
 export interface StoredRender {
   wavPath: string;
   f0Path: string;
@@ -173,6 +184,7 @@ export interface StoredRender {
   timingHash: string;
   synthHash?: string;
   logPath?: string;
+  phrases?: PhraseInfo[];
 }
 
 export interface Project {
@@ -219,6 +231,9 @@ export interface RenderStartPayload {
   sampleRate: number;
   bitDepth: number;
   binaries?: { neutrino: string | null; converter: string | null };
+  phrases?: PhraseInfo[];
+  phraseIndices?: number[];
+  crossfadeMs?: number;
 }
 
 export interface RenderResult {
@@ -237,6 +252,7 @@ export interface RenderResult {
   model: string;
   elapsedMs: number;
   f0: Uint8Array | null;
+  phrases?: PhraseInfo[];
 }
 
 export interface RenderProgressEvent {

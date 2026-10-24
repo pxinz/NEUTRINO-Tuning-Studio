@@ -11,6 +11,7 @@ import type {
   ModelInfo,
   NeutrinoInfo,
   Note,
+  PhraseInfo,
   Project,
   ReferenceTrack,
   RenderMode,
@@ -72,6 +73,7 @@ import {
 import { musicXmlForNeutrino, importMusicXml, exportMusicXml } from '../lib/musicxml';
 import { importMidi } from '../lib/midi';
 import { checkLyric } from '../lib/lyrics';
+import { dirtyFrameCount, dirtyPhraseIndices } from '../lib/phrases';
 import { audioEngine } from '../lib/audio';
 import {
   clamp,
@@ -498,6 +500,7 @@ export const useAppStore = create<AppState>((set, get) => {
           timingHash: tHash,
           synthHash: renderSignature(s.project.synth),
           logPath: result.logPath,
+          phrases: result.phrases?.length ? result.phrases : s.project.render?.phrases,
         },
         updatedAt: now,
       },
@@ -1400,13 +1403,15 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     setPitchData(base, current, edited) {
-      set({
+      set((s) => ({
         baseF0: base,
         currentF0: current,
         pitchEdited: edited,
         dirty: true,
-        project: { ...get().project, updatedAt: Date.now() },
-      });
+        // The label should describe the next render, not the previous one.
+        render: { ...s.render, mode: null },
+        project: { ...s.project, updatedAt: Date.now() },
+      }));
     },
 
     setCurrentF0(f0, edited = true) {
@@ -1414,6 +1419,7 @@ export const useAppStore = create<AppState>((set, get) => {
         currentF0: f0,
         pitchEdited: edited,
         dirty: true,
+        render: { ...s.render, mode: null },
         project: { ...s.project, updatedAt: Date.now() },
       }));
     },
@@ -1753,6 +1759,36 @@ export const useAppStore = create<AppState>((set, get) => {
         mode = 'full';
       }
 
+      // Stage-level vocode is already incremental. If only a few phrases changed,
+      // use NEUTRINO's `-p` single-phrase mode and splice the phrase WAV back in.
+      let phrasePlan: { phrases: PhraseInfo[]; indices: number[] } | null = null;
+      if (
+        mode === 'vocode' &&
+        rendered?.phrases?.length &&
+        s.currentF0 &&
+        rendered.f0Path
+      ) {
+        try {
+          const bytes = await window.api.readBinary(rendered.f0Path);
+          const previous = bytes ? parseF0(new Uint8Array(bytes)) : null;
+          if (previous && previous.length === s.currentF0.length) {
+            const indices = dirtyPhraseIndices(rendered.phrases, previous, s.currentF0);
+            const frames = dirtyFrameCount(rendered.phrases, previous, s.currentF0, indices);
+            if (
+              indices.length > 0 &&
+              indices.length <= 4 &&
+              frames > 0 &&
+              frames <= s.currentF0.length * 0.45
+            ) {
+              mode = 'phrase';
+              phrasePlan = { phrases: rendered.phrases, indices };
+            }
+          }
+        } catch {
+          // Missing/corrupt previous F0: safely fall back to a full vocode.
+        }
+      }
+
       const basePayload = {
         projectId: s.project.id,
         model: s.project.synth.model,
@@ -1880,6 +1916,40 @@ export const useAppStore = create<AppState>((set, get) => {
           await loadAudioForPath(finalResult.wavPath);
           set({ logOpen: false });
           s.pushToast('success', i18n.t('notifications.timingRendered'));
+        } else if (mode === 'phrase' && phrasePlan) {
+          if (!s.timing || !s.currentF0) throw new Error(i18n.t('errors.noPitch'));
+          try {
+            const result = await runRender({
+              ...basePayload,
+              mode: 'phrase',
+              timingText: s.timing.text,
+              f0: f0ToBytes(s.currentF0),
+              phrases: phrasePlan.phrases,
+              phraseIndices: phrasePlan.indices,
+              crossfadeMs: 30,
+            });
+            setRenderFinal(result, 'phrase', s.timing, get().project);
+            await loadAudioForPath(result.wavPath);
+            set({ logOpen: false });
+            s.pushToast('success', i18n.t('notifications.phraseRendered'));
+          } catch (err) {
+            const message = (err as Error).message || String(err);
+            if (/canceled|cancelled/i.test(message)) throw err;
+            // A malformed phrase map or an engine that rejects -p should not
+            // leave the user without a take; fall back to the proven full
+            // vocoder path.
+            s.pushToast('info', i18n.t('notifications.phraseFallback'));
+            const result = await runRender({
+              ...basePayload,
+              mode: 'vocode',
+              timingText: s.timing.text,
+              f0: f0ToBytes(s.currentF0),
+            });
+            setRenderFinal(result, 'vocode', s.timing, get().project);
+            await loadAudioForPath(result.wavPath);
+            set({ logOpen: false });
+            s.pushToast('success', i18n.t('notifications.pitchRendered'));
+          }
         } else {
           if (!s.timing || !s.currentF0) throw new Error(i18n.t('errors.noPitch'));
           const result = await runRender({

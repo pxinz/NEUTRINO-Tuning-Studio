@@ -2,7 +2,7 @@
 
 The project contains an **arm64 macOS cross-build** in
 
-`release/mac/NEUTRINO-Tuning-Studio-1.0.1-macOS-arm64-unsigned.zip`.
+`release/mac/NEUTRINO-Tuning-Studio-1.1.0-macOS-arm64-unsigned.zip`.
 
 Important: this artifact was built on WSL from the Electron darwin-arm64
 distribution. It has been inspected (arm64 Mach-O, `.app` structure, framework
@@ -60,3 +60,4 @@ Gatekeeper, audio device, and NEUTRINO engine integration.
 Use the official macOS (Apple Silicon) NEUTRINO package and point the studio at
 the folder containing `Run.sh` and `model/`. The app does not bundle or
 redistribute the engine or voice libraries.
+

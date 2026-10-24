@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createDemoScore, getScoreHash, normalizeScore, scoreEndBeat, secondsToBeat, beatToSeconds } from '../src/lib/score';
+import { createProject, decodeProject, encodeProject } from '../src/lib/project';
 import { exportMusicXml, importMusicXml } from '../src/lib/musicxml';
 import { decodeF0, encodeF0, parseF0, transposeF0, warpF0ByTiming } from '../src/lib/pitch';
 import { parseTimingText, serializeTiming, updateBoundary } from '../src/lib/timing';
@@ -99,6 +100,34 @@ describe('F0 data', () => {
     const warped = warpF0ByTiming(f0, oldTiming.phonemes, newTiming);
     expect(warped).not.toBeNull();
     expect(warped!.length).toBeGreaterThan(0);
+  });
+});
+
+describe('project phrase persistence', () => {
+  it('keeps the render phrase map through save and load', () => {
+    const project = createProject(createDemoScore());
+    project.render = {
+      wavPath: '/tmp/output.wav',
+      f0Path: '/tmp/output.f0',
+      melspecPath: '/tmp/output.melspec',
+      timingPath: '/tmp/timing.lab',
+      duration: 20,
+      sampleRate: 48000,
+      channels: 1,
+      bitsPerSample: 16,
+      model: 'MERROW',
+      renderedAt: Date.now(),
+      scoreHash: getScoreHash(project.score),
+      timingHash: 'timing',
+      phrases: [
+        { index: 1, startFrame: 10, endFrame: 410, sung: true, lyric: 'a' },
+        { index: 2, startFrame: 410, endFrame: 500, sung: false, lyric: 'pau' },
+      ],
+    };
+    const raw = encodeProject(project, null, null, null, false);
+    const decoded = decodeProject(raw);
+    expect(decoded.project.render?.phrases).toHaveLength(2);
+    expect(decoded.project.render?.phrases?.[0]).toMatchObject({ index: 1, startFrame: 10, sung: true });
   });
 });
 

@@ -6,6 +6,8 @@ const { spawn } = require('node:child_process');
 const { app } = require('electron');
 const { ensureDir, decodeBuffer, readWavInfo, sanitizeName } = require('./util.cjs');
 const { buildCommand } = require('./neutrino.cjs');
+const { parsePhraseList } = require('./phrases.cjs');
+const { splicePhraseWav } = require('./wav.cjs');
 
 function nowMs() {
   return Date.now();
@@ -104,7 +106,9 @@ class RenderManager {
     const root = payload.root || settings.neutrinoRoot;
     if (!root) throw new Error('NEUTRINO folder is not configured.');
     const mode = payload.mode || 'full';
-    if (!['full', 'timing', 'vocode'].includes(mode)) throw new Error(`Unknown render mode: ${mode}`);
+    if (!['full', 'timing', 'vocode', 'phrase'].includes(mode)) {
+      throw new Error(`Unknown render mode: ${mode}`);
+    }
     const model = payload.model || settings.defaultModel;
     if (!model) throw new Error('Choose a voice model first.');
     if (!fs.existsSync(path.join(root, 'model', model))) {
@@ -126,6 +130,7 @@ class RenderManager {
       f0: path.join(workspace, 'output.f0'),
       melspec: path.join(workspace, 'output.melspec'),
       wav: path.join(workspace, 'output.wav'),
+      phrases: path.join(workspace, 'phrases.txt'),
       log: path.join(workspace, 'render.log'),
     };
 
@@ -133,7 +138,15 @@ class RenderManager {
       if (!payload.scoreXml || !String(payload.scoreXml).includes('<score-partwise')) {
         throw new Error('The generated MusicXML score is empty or invalid.');
       }
-      for (const f of [files.fullLab, files.monoLab, files.timing, files.f0, files.melspec, files.wav]) {
+      for (const f of [
+        files.fullLab,
+        files.monoLab,
+        files.timing,
+        files.f0,
+        files.melspec,
+        files.wav,
+        files.phrases,
+      ]) {
         try {
           fs.rmSync(f, { force: true });
         } catch {}
@@ -142,11 +155,8 @@ class RenderManager {
     } else {
       if (!payload.timingText) throw new Error('Timing data is missing. Render the score first.');
       if (!fs.existsSync(files.fullLab)) throw new Error('Label data is missing. Render the score first.');
-      if (!fs.existsSync(files.timing) && !payload.timingText) {
-        throw new Error('Timing data is missing. Render the score first.');
-      }
       fs.writeFileSync(files.timing, payload.timingText, 'utf8');
-      if (mode === 'vocode') {
+      if (mode === 'vocode' || mode === 'phrase') {
         if (!fs.existsSync(files.melspec)) throw new Error('Mel-spectrogram data is missing.');
         if (!(payload.f0 instanceof Uint8Array) || payload.f0.byteLength === 0) {
           throw new Error('Pitch data is missing.');
@@ -160,6 +170,15 @@ class RenderManager {
           );
         }
         fs.writeFileSync(files.f0, Buffer.from(payload.f0));
+      }
+      if (mode === 'phrase') {
+        if (!fs.existsSync(files.wav)) throw new Error('The previous full take is missing.');
+        if (!Array.isArray(payload.phrases) || !payload.phrases.length) {
+          throw new Error('Phrase data is missing. Render the full score again.');
+        }
+        if (!Array.isArray(payload.phraseIndices) || !payload.phraseIndices.length) {
+          throw new Error('No changed phrases were provided.');
+        }
       }
     }
 
@@ -203,6 +222,10 @@ class RenderManager {
     const neutrinoPath = binaries.neutrino || this.findNeutrino(root);
     const converterPath = binaries.converter || this.findConverter(root);
     if (!neutrinoPath) throw new Error('NEUTRINO executable was not found.');
+
+    if (mode === 'phrase') {
+      return this.runPhrase(id, payload, files, root, settings, neutrinoPath, runner, wineCommand);
+    }
 
     if (mode === 'full') {
       if (!converterPath) throw new Error('musicXMLtoLabel executable was not found.');
@@ -249,6 +272,7 @@ class RenderManager {
     }
     if (mode === 'timing') args.push('--skip-timing');
     if (mode === 'vocode') args.push('--skip-timing', '--skip-f0', '--skip-melspec');
+    if (mode === 'full' || mode === 'timing') args.push('-i', files.phrases);
 
     this.log(id, `[studio] NEUTRINO: ${neutrinoPath}`);
     this.log(id, `[studio] mode=${mode} model=${payload.model} args=${args.join(' ')}`);
@@ -268,6 +292,11 @@ class RenderManager {
       ? fs.readFileSync(files.timing, 'utf8')
       : '';
     const f0 = safeRead(files.f0);
+    let phrases = Array.isArray(payload.phrases) ? payload.phrases : [];
+    if (f0 && fs.existsSync(files.phrases)) {
+      const parsed = parsePhraseList(fs.readFileSync(files.phrases, 'utf8'), f0.byteLength / 4);
+      if (parsed.length) phrases = parsed;
+    }
     const result = {
       renderId: id,
       mode,
@@ -284,10 +313,130 @@ class RenderManager {
       model: payload.model,
       elapsedMs: nowMs() - this.active.startedAt,
       f0: mode === 'vocode' ? null : f0 ? new Uint8Array(f0) : null,
+      phrases,
     };
     this.progress(id, 100, 'done', 'Render complete');
     this.emitEvent({ type: 'done', renderId: id, result });
     this.active = null;
+  }
+
+  async runPhrase(id, payload, files, root, settings, neutrinoPath, runner, wineCommand) {
+    const selected = new Set((payload.phraseIndices || []).map(Number));
+    const phrases = (payload.phrases || []).filter((p) => p.sung && selected.has(Number(p.index)));
+    if (!phrases.length) throw new Error('No changed sung phrases were found.');
+    const fullF0 = fs.readFileSync(files.f0);
+    const fullMel = fs.readFileSync(files.melspec);
+    const totalFrames = fullMel.length / 400;
+    if (fullF0.length !== totalFrames * 4) {
+      throw new Error('Pitch/melspec frame count mismatch in the previous take.');
+    }
+    const modelDir = path.join(root, 'model', payload.model) + path.sep;
+    const tempDir = path.join(files.workspace, 'phrase-cache');
+    ensureDir(tempDir);
+    const crossfadeMs = Math.max(0, Math.min(200, Number(payload.crossfadeMs ?? 30)));
+    const replacements = [];
+    this.log(
+      id,
+      `[studio] mode=phrase crossfade=${crossfadeMs}ms phrases=${phrases.map((p) => p.index).join(', ')}`,
+    );
+    try {
+      for (let n = 0; n < phrases.length; n++) {
+        if (!this.active || this.active.id !== id) throw new Error('Render canceled.');
+        if (this.active.cancelled) throw new Error('Render canceled.');
+        const phrase = phrases[n];
+        const startFrame = Math.max(0, Math.min(totalFrames, Math.round(phrase.startFrame)));
+        const endFrame = Math.max(startFrame, Math.min(totalFrames, Math.round(phrase.endFrame)));
+        if (endFrame <= startFrame) continue;
+        const f0Slice = fullF0.subarray(startFrame * 4, endFrame * 4);
+        const melSlice = fullMel.subarray(startFrame * 400, endFrame * 400);
+        const stem = `phrase-${phrase.index}`;
+        const f0Path = path.join(tempDir, `${stem}.f0`);
+        const melPath = path.join(tempDir, `${stem}.melspec`);
+        const wavPath = path.join(tempDir, `${stem}.wav`);
+        fs.writeFileSync(f0Path, f0Slice);
+        fs.writeFileSync(melPath, melSlice);
+        const args = [
+          files.fullLab,
+          files.timing,
+          f0Path,
+          melPath,
+          wavPath,
+          modelDir,
+          '-p',
+          String(phrase.index),
+          '--skip-timing',
+          '--skip-f0',
+          '--skip-melspec',
+          '-n',
+          String(payload.threads || settings.threads || 4),
+          '-k',
+          String(payload.styleShift || 0),
+          '-f',
+          String(payload.transpose || 0),
+          '-s',
+          String(payload.sampleRate || settings.sampleRate || 48000),
+          '-b',
+          String(payload.bitDepth || settings.bitDepth || 16),
+          '-t',
+        ];
+        if (payload.useGpu !== false) args.push('-m');
+        if (payload.supportModel) args.push('-S', payload.supportModel);
+        this.log(
+          id,
+          `[studio] phrase ${n + 1}/${phrases.length}: -p ${phrase.index} frames ${startFrame}-${endFrame}`,
+        );
+        const cmd = buildCommand(root, neutrinoPath, args, runner, wineCommand);
+        const base = 8 + (n / phrases.length) * 78;
+        const res = await this.spawnStage(id, cmd, 'phrase', base, 78 / phrases.length);
+        if (!this.active || this.active.id !== id || this.active.cancelled) {
+          throw new Error('Render canceled.');
+        }
+        if (res.code !== 0 || !fs.existsSync(wavPath)) {
+          throw new Error(`Phrase ${phrase.index} re-render failed (exit ${res.code}).`);
+        }
+        const info = readWavInfo(wavPath);
+        if (!info.duration) throw new Error(`Phrase ${phrase.index} produced an empty WAV file.`);
+        replacements.push({
+          startFrame,
+          endFrame,
+          buffer: fs.readFileSync(wavPath),
+        });
+        this.progress(id, base + (78 / phrases.length), 'phrase', `Phrase ${n + 1}/${phrases.length} ready`);
+      }
+      if (!replacements.length) throw new Error('No phrase audio was produced.');
+      const baseWav = fs.readFileSync(files.wav);
+      const spliced = splicePhraseWav(baseWav, replacements, { crossfadeMs });
+      const tempWav = path.join(files.workspace, 'output.incremental.wav');
+      fs.writeFileSync(tempWav, spliced);
+      fs.renameSync(tempWav, files.wav);
+      const wavInfo = readWavInfo(files.wav);
+      const timingText = fs.existsSync(files.timing) ? fs.readFileSync(files.timing, 'utf8') : '';
+      const result = {
+        renderId: id,
+        mode: 'phrase',
+        wavPath: files.wav,
+        f0Path: files.f0,
+        melspecPath: files.melspec,
+        timingPath: files.timing,
+        timingText,
+        duration: wavInfo.duration,
+        sampleRate: wavInfo.sampleRate,
+        channels: wavInfo.channels,
+        bitsPerSample: wavInfo.bitsPerSample,
+        logPath: files.log,
+        model: payload.model,
+        elapsedMs: nowMs() - this.active.startedAt,
+        f0: null,
+        phrases: payload.phrases,
+      };
+      this.progress(id, 100, 'done', 'Phrase render complete');
+      this.emitEvent({ type: 'done', renderId: id, result });
+      this.active = null;
+    } finally {
+      try {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      } catch {}
+    }
   }
 
   findNeutrino(root) {

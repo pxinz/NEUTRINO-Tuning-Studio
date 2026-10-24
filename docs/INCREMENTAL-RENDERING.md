@@ -1,6 +1,7 @@
 # Incremental / phrase-level re-rendering
 
-Status: **investigated, not enabled in the UI yet**.
+Status: **implemented for pitch-only edits** (experimental, automatic fallback
+to full vocode). Timing/score changes still use the full/timing render path.
 
 The app already does stage-level incremental rendering: after a full render it can
 reuse `timing.lab`, `f0` and `melspec`, and only run later stages. The next step
@@ -102,6 +103,31 @@ length and on slower CPUs.
 - A score change can renumber phrases and changes the full label file.
 - These should continue to use the existing full/timing render path until a
   global timeline remap is implemented.
+
+## Implemented in 1.1.0
+
+- Full and timing renders now pass `-i <workspace>/phrases.txt`; the parsed
+  phrase map is stored in `project.render.phrases` and saved with the project.
+- Before a pitch re-render, the renderer compares `currentF0` with the last
+  rendered `output.f0`. If 1–4 sung phrases changed and those phrases cover at
+  most 45% of the song, it switches to `mode=phrase` automatically. Otherwise
+  it uses the normal full vocode.
+- The main process slices F0/melspec to each dirty phrase, runs
+  `-p N --skip-timing --skip-f0 --skip-melspec`, then splices the phrase WAVs
+  into the previous take with a 30 ms crossfade. Timing and melspec stay
+  untouched; the full edited F0 is written for the next pass.
+- The operation is atomic: phrase WAVs are rendered to a temp directory and the
+  final WAV is replaced only after all phrases succeed. A missing phrase map,
+  too many dirty phrases, or a full-song phrase falls back to the existing
+  full vocode. Cancellation leaves the previous take untouched.
+- Unit tests cover phrase parsing, dirty phrase detection, and PCM16
+  splicing/crossfade; a real-engine Playwright test imports sample1, changes
+  pitch in phrase 1, and asserts that only that phrase region of the WAV changed.
+
+Measured on sample1: full render 43.2 s/11.84 s; phrase 1 vocode 4.83 s/1.07 s;
+after the phrase splice, samples outside phrase 1 were byte-identical to the
+previous take (0 changed samples), while the phrase region changed. UI mode
+label shows **局部重渲染 / Phrase re-render**.
 
 ## What is already in the app
 

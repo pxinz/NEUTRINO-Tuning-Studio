@@ -295,7 +295,10 @@ export default function RightPanel() {
   const timingStale = Boolean(
     timing && (!rendered || rendered.timingHash !== timingHash(timing.text)),
   );
-  const mode = stale ? 'full' : timingStale ? 'timing' : pitchEdited ? 'vocode' : 'full';
+  const plannedMode = stale ? 'full' : timingStale ? 'timing' : pitchEdited ? 'vocode' : 'full';
+  const mode = render.status === 'running' || render.status === 'done' ? render.mode || plannedMode : plannedMode;
+  const modeKey =
+    mode === 'full' ? 'full' : mode === 'timing' ? 'timing' : mode === 'phrase' ? 'phrase' : 'pitch';
   const busy = render.status === 'running';
   const elapsed = render.elapsedMs ? `${(render.elapsedMs / 1000).toFixed(1)}s` : '';
   const stageLabel = render.stage ? t(`render.stage.${render.stage}`, { defaultValue: render.stage }) : '';
@@ -457,7 +460,7 @@ export default function RightPanel() {
         >
           <div className="render-mode-row">
             <span className="render-mode-label">
-              {t('render.title')} · <strong>{t(`render.${mode === 'full' ? 'full' : mode === 'timing' ? 'timing' : 'pitch'}`)}</strong>
+              {t('render.title')} · <strong>{t(`render.${modeKey}`)}</strong>
             </span>
             {rendered ? <span className="render-timestamp">{new Date(rendered.renderedAt).toLocaleTimeString()}</span> : null}
           </div>
@@ -491,7 +494,9 @@ export default function RightPanel() {
                   ? t('render.takes')
                   : mode === 'timing'
                     ? t('timing.renderHint')
-                    : t('pitch.renderHint')}
+                    : mode === 'phrase'
+                      ? t('render.phraseHint')
+                      : t('pitch.renderHint')}
               </div>
             </>
           )}
