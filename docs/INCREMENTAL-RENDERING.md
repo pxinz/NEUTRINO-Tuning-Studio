@@ -7,8 +7,9 @@ The app performs two kinds of incremental rendering:
 
 - **Stage-level**: reuse `timing.lab`, `f0` and `melspec`, then run only the
   remaining stages.
-- **Phrase-level**: when eligible, re-vocode only the phrases whose pitch
-  changed, then splice them back into the existing take.
+- **Dirty-region**: when eligible, re-vocode affected phrases and splice only
+  the changed F0 frame windows back into the existing take. Unchanged audio
+  inside the same phrase is preserved; separated edits become separate windows.
 
 ## CLI support
 
@@ -82,26 +83,31 @@ quality should be auditioned.
 - Full and timing renders pass `-i <workspace>/phrases.txt`; the parsed phrase
   map is stored in `project.render.phrases` and saved with the project.
 - Before a pitch re-render, the renderer compares `currentF0` with the last
-  rendered `output.f0`. If 1–4 sung phrases changed and those phrases cover at
-  most 45% of the song, it switches to `mode=phrase` automatically; otherwise
-  it uses the normal full vocode.
-- The main process slices F0/melspec to each changed phrase, runs
-  `-p N --skip-timing --skip-f0 --skip-melspec`, then splices the phrase WAVs
-  into the previous take with a 30 ms crossfade. Timing and melspec stay
-  untouched; the full edited F0 is written for the next pass.
+  rendered `output.f0`. Changed frames are grouped into windows with a 50 ms
+  context guard; edits separated by more than the merge gap become separate
+  windows. If at most eight sung phrases are affected and changed frames cover
+  at most 50% of the song, it switches to `mode=phrase`; otherwise it uses the
+  normal full vocode.
+- The main process slices F0/melspec to each affected phrase and runs
+  `-p N --skip-timing --skip-f0 --skip-melspec` once per phrase. It then splices
+  only each dirty frame window from the rendered phrase WAV into the previous
+  take, with a 30 ms crossfade at every window edge. Unchanged samples inside
+  the phrase are preserved.
 - The operation is atomic: phrase WAVs are rendered to a temp directory and the
-  final WAV is replaced only after all phrases succeed. A missing phrase map,
-  too many changed phrases, or a full-song phrase falls back to a full vocode.
+  final WAV is replaced only after all windows succeed. A missing phrase map,
+  too many changed phrases, or invalid windows fall back to a full vocode.
   Cancellation leaves the previous take untouched.
-- Unit tests cover phrase parsing, dirty phrase detection, PCM16 splicing and
-  project phrase persistence. A real-engine Playwright test imports sample1,
-  changes pitch in phrase 1, and verifies that only that phrase region of the WAV
-  changed.
+- Unit tests cover phrase parsing, dirty window detection (merged and separated
+  windows), PCM16 sub-window splicing, and project phrase persistence. A
+  real-engine Playwright test imports sample1, changes pitch in phrase 1, and
+  verifies the changed-sample boundaries.
 
-Measured on sample1: after the phrase splice, samples outside phrase 1 were
-byte-identical to the previous take (0 changed samples), while the phrase region
-changed. The UI mode label is **局部重渲染（实验性）/ Phrase re-render
-(experimental)**.
+Measured on sample1 (43.2 s, 48 kHz): the edit produced a **1.79 s** dirty
+window (frames 500–679). After the splice, **85,756 samples changed inside the
+window and 0 samples changed outside it**; the previous whole-phrase splice
+changed roughly 434,000 samples. The UI label is **脏区重渲染（实验性）/
+Dirty-region re-render (experimental)**. This remains a feasibility experiment,
+not a release feature.
 
 ## Current render paths
 
@@ -110,8 +116,8 @@ changed. The UI mode label is **局部重渲染（实验性）/ Phrase re-render
 2. **Timing** — timing edited; `--skip-timing`, then regenerates F0/melspec/WAV.
 3. **Vocode** — pitch edited but phrase mode is unavailable or not beneficial;
    `--skip-timing --skip-f0 --skip-melspec`.
-4. **Phrase** — pitch edited and 1–4 changed phrases cover at most 45% of the
-   song; per-phrase `-p` plus crossfade splice.
+4. **Dirty region** — pitch edited and at most 8 changed phrases cover at most
+   50% of the song; per-phrase `-p` plus changed-frame-window splices.
 
 ## Remaining work
 

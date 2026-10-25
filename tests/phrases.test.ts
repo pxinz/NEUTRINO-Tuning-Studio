@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRequire } from 'node:module';
-import { dirtyFrameCount, dirtyPhraseIndices } from '../src/lib/phrases';
+import { dirtyFrameCount, dirtyPhraseIndices, dirtyPhraseRanges } from '../src/lib/phrases';
 import type { PhraseInfo } from '../src/lib/types';
 
 const require = createRequire(import.meta.url);
@@ -57,6 +57,40 @@ describe('phrase lists', () => {
     current[10] = 221;
     expect(dirtyPhraseIndices(phrases, previous, current)).toEqual([1, 2]);
   });
+
+  it('returns only the changed frame window with a context guard', () => {
+    const phrases: PhraseInfo[] = [
+      { index: 1, startFrame: 100, endFrame: 200, sung: true },
+      { index: 2, startFrame: 200, endFrame: 300, sung: true },
+    ];
+    const previous = new Float32Array(300).fill(220);
+    const current = previous.slice();
+    current[150] = 240;
+    current[152] = 240;
+    const ranges = dirtyPhraseRanges(phrases, previous, current);
+    expect(ranges).toHaveLength(1);
+    expect(ranges[0]).toMatchObject({
+      index: 1,
+      firstDirtyFrame: 150,
+      lastDirtyFrame: 152,
+      startFrame: 145,
+      endFrame: 158,
+      changedFrames: 2,
+    });
+  });
+
+  it('keeps widely separated edits as separate dirty windows', () => {
+    const phrases: PhraseInfo[] = [{ index: 1, startFrame: 0, endFrame: 300, sung: true }];
+    const previous = new Float32Array(300).fill(220);
+    const current = previous.slice();
+    current[50] = 240;
+    current[150] = 240;
+    const ranges = dirtyPhraseRanges(phrases, previous, current);
+    expect(ranges).toHaveLength(2);
+    expect(ranges[0]).toMatchObject({ startFrame: 45, endFrame: 56 });
+    expect(ranges[1]).toMatchObject({ startFrame: 145, endFrame: 156 });
+    expect(dirtyPhraseIndices(phrases, previous, current)).toEqual([1]);
+  });
 });
 
 describe('phrase WAV splicing', () => {
@@ -72,6 +106,28 @@ describe('phrase WAV splicing', () => {
     expect(sampleAt(9600)).toBeCloseTo(0.5, 2);
     expect(sampleAt(14000)).toBeCloseTo(0.5, 2);
     expect(sampleAt(50)).toBeCloseTo(0, 5);
+  });
+
+  it('replaces only a sub-window from a larger phrase render', () => {
+    const base = makeWav16(new Array(48000).fill(0));
+    const phrase = makeWav16(new Array(4800).fill(0.9));
+    const replaced = splicePhraseWav(
+      base,
+      [{
+        startFrame: 20,
+        endFrame: 21,
+        sourceStartFrame: 2,
+        sourceEndFrame: 3,
+        buffer: phrase,
+      }],
+      { crossfadeMs: 0 },
+    );
+    const parsed = parseWav(replaced);
+    const sampleAt = (i: number) => replaced.readInt16LE(parsed.dataOffset + i * 2) / 32768;
+    expect(sampleAt(9599)).toBeCloseTo(0, 5);
+    expect(sampleAt(9600)).toBeCloseTo(0.9, 2);
+    expect(sampleAt(10079)).toBeCloseTo(0.9, 2);
+    expect(sampleAt(10080)).toBeCloseTo(0, 5);
   });
 
   it('fades the phrase boundaries into the existing take', () => {

@@ -82,7 +82,7 @@ function writeSample(buffer, offset, value, bits, format) {
 
 /**
  * @param {Buffer} baseBuffer original full WAV
- * @param {{startFrame:number,endFrame:number,buffer:Buffer}[]} replacements
+ * @param {{startFrame:number,endFrame:number,sourceStartFrame?:number,sourceEndFrame?:number,buffer:Buffer}[]} replacements
  * @param {{crossfadeMs?:number}} [options]
  * @returns {Buffer}
  */
@@ -110,8 +110,17 @@ function splicePhraseWav(baseBuffer, replacements, options = {}) {
     const endFrame = Math.max(startFrame, Math.min(base.frames, Math.round(replacement.endFrame)));
     const startSample = Math.round((startFrame / 100) * base.sampleRate);
     const endSample = Math.round((endFrame / 100) * base.sampleRate);
+    const sourceStartFrame = Math.max(0, Number(replacement.sourceStartFrame) || 0);
+    const sourceEndFrame = Math.max(
+      sourceStartFrame,
+      Number.isFinite(replacement.sourceEndFrame)
+        ? Number(replacement.sourceEndFrame)
+        : sourceStartFrame + (endFrame - startFrame),
+    );
+    const sourceStartSample = Math.round((sourceStartFrame / 100) * phrase.sampleRate);
+    const sourceEndSample = Math.round((sourceEndFrame / 100) * phrase.sampleRate);
     const expected = Math.max(0, endSample - startSample);
-    const count = Math.min(expected, phrase.frames);
+    const count = Math.min(expected, Math.max(0, sourceEndSample - sourceStartSample), Math.max(0, phrase.frames - sourceStartSample));
     if (!count) continue;
     const hasPrev = startSample > 0;
     const hasNext = endSample < base.frames;
@@ -124,7 +133,7 @@ function splicePhraseWav(baseBuffer, replacements, options = {}) {
       }
       for (let ch = 0; ch < base.channels; ch++) {
         const baseOffset = base.dataOffset + (startSample + i) * base.blockAlign + ch * base.bytesPerSample;
-        const newOffset = phrase.dataOffset + i * phrase.blockAlign + ch * phrase.bytesPerSample;
+        const newOffset = phrase.dataOffset + (sourceStartSample + i) * phrase.blockAlign + ch * phrase.bytesPerSample;
         const oldValue = readSample(out, baseOffset, base.bitsPerSample, base.audioFormat);
         const newValue = readSample(replacement.buffer, newOffset, phrase.bitsPerSample, phrase.audioFormat);
         writeSample(out, baseOffset, oldValue * (1 - weight) + newValue * weight, base.bitsPerSample, base.audioFormat);

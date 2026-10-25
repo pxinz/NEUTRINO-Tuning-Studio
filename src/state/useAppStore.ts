@@ -74,7 +74,7 @@ import { musicXmlForNeutrino, importMusicXml, exportMusicXml } from '../lib/musi
 import { importMidi } from '../lib/midi';
 import { checkLyric } from '../lib/lyrics';
 import { timelineEnd } from '../lib/timeline';
-import { dirtyFrameCount, dirtyPhraseIndices } from '../lib/phrases';
+import { dirtyPhraseRanges } from '../lib/phrases';
 import { audioEngine } from '../lib/audio';
 import {
   clamp,
@@ -1879,7 +1879,11 @@ export const useAppStore = create<AppState>((set, get) => {
 
       // Stage-level vocode is already incremental. If only a few phrases changed,
       // use NEUTRINO's `-p` single-phrase mode and splice the phrase WAV back in.
-      let phrasePlan: { phrases: PhraseInfo[]; indices: number[] } | null = null;
+      let phrasePlan: {
+        phrases: PhraseInfo[];
+        indices: number[];
+        ranges: Array<{ index: number; startFrame: number; endFrame: number }>;
+      } | null = null;
       if (
         mode === 'vocode' &&
         rendered?.phrases?.length &&
@@ -1890,16 +1894,21 @@ export const useAppStore = create<AppState>((set, get) => {
           const bytes = await window.api.readBinary(rendered.f0Path);
           const previous = bytes ? parseF0(new Uint8Array(bytes)) : null;
           if (previous && previous.length === s.currentF0.length) {
-            const indices = dirtyPhraseIndices(rendered.phrases, previous, s.currentF0);
-            const frames = dirtyFrameCount(rendered.phrases, previous, s.currentF0, indices);
+            const ranges = dirtyPhraseRanges(rendered.phrases, previous, s.currentF0);
+            const changedFrames = ranges.reduce((sum, range) => sum + range.changedFrames, 0);
+            const phraseCount = new Set(ranges.map((range) => range.index)).size;
             if (
-              indices.length > 0 &&
-              indices.length <= 4 &&
-              frames > 0 &&
-              frames <= s.currentF0.length * 0.45
+              ranges.length > 0 &&
+              phraseCount <= 8 &&
+              changedFrames > 0 &&
+              changedFrames <= s.currentF0.length * 0.5
             ) {
               mode = 'phrase';
-              phrasePlan = { phrases: rendered.phrases, indices };
+              phrasePlan = {
+                phrases: rendered.phrases,
+                indices: [...new Set(ranges.map((range) => range.index))],
+                ranges: ranges.map(({ index, startFrame, endFrame }) => ({ index, startFrame, endFrame })),
+              };
             }
           }
         } catch {
@@ -2044,6 +2053,7 @@ export const useAppStore = create<AppState>((set, get) => {
               f0: f0ToBytes(s.currentF0),
               phrases: phrasePlan.phrases,
               phraseIndices: phrasePlan.indices,
+              phraseRanges: phrasePlan.ranges,
               crossfadeMs: 30,
             });
             setRenderFinal(result, 'phrase', s.timing, get().project);

@@ -120,9 +120,11 @@ Tau also exposes `-p N` (one phrase) and `-i phrases.txt` (phrase trace). A phra
 render writes phrase-sized F0/melspec/WAV while the timing file remains full. When
 combined with skip flags, the F0/melspec inputs must be trimmed to the phrase.
 
-This was verified. Pitch-only phrase splicing is now used automatically when only
-a few phrases change; it is experimental and falls back to a full vocode. Timing
-or score changes still use the full render path. Measurements and caveats are in
+This was verified. Pitch-only dirty-region splicing is used automatically when a
+few phrases change; per-phrase changed-frame windows (including multiple windows
+inside one phrase) are spliced into the previous take. It is experimental and
+falls back to a full vocode. Timing or score changes still use the full render
+path. Measurements and caveats are in
 [INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
 
 ## Render modes
@@ -136,9 +138,12 @@ The UI chooses one of four modes from hashes stored in the project:
    app warps the pitch curve from the old phoneme timeline to the new one,
    writes it, and performs a second vocoder-only pass.
 3. **Vocode** — only pitch changed. Runs with all three skip flags.
-4. **Phrase** — pitch changed and at most four changed phrases cover at most 45%
-   of the song. Slices F0/melspec, runs `-p` per phrase, and crossfades the
-   phrase audio into the previous take. Falls back to Vocode if unavailable.
+4. **Phrase / dirty region** — pitch changed, at most eight phrases are affected,
+   and changed F0 frames cover at most 50% of the song. Slices F0/melspec, runs
+   `-p` once per affected phrase, then splices only each changed frame window
+   (with context guard and a 30 ms crossfade) into the previous take. Multiple
+   separated edits inside one phrase become multiple windows. Falls back to
+   Vocode if unavailable.
 
 Score edits clear timing/F0 because note identities and phoneme alignment no
 longer correspond. A full render discards timing edits; pitch edits can be

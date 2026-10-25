@@ -324,6 +324,16 @@ class RenderManager {
     const selected = new Set((payload.phraseIndices || []).map(Number));
     const phrases = (payload.phrases || []).filter((p) => p.sung && selected.has(Number(p.index)));
     if (!phrases.length) throw new Error('No changed sung phrases were found.');
+    const dirtyRanges = new Map();
+    for (const range of (Array.isArray(payload.phraseRanges) ? payload.phraseRanges : [])) {
+      const index = Number(range.index);
+      const list = dirtyRanges.get(index) || [];
+      list.push({
+        startFrame: Number(range.startFrame),
+        endFrame: Number(range.endFrame),
+      });
+      dirtyRanges.set(index, list);
+    }
     const fullF0 = fs.readFileSync(files.f0);
     const fullMel = fs.readFileSync(files.melspec);
     const totalFrames = fullMel.length / 400;
@@ -396,11 +406,30 @@ class RenderManager {
         }
         const info = readWavInfo(wavPath);
         if (!info.duration) throw new Error(`Phrase ${phrase.index} produced an empty WAV file.`);
-        replacements.push({
-          startFrame,
-          endFrame,
-          buffer: fs.readFileSync(wavPath),
-        });
+        const requested = dirtyRanges.get(Number(phrase.index)) || [];
+        const phraseBuffer = fs.readFileSync(wavPath);
+        const windows = [];
+        for (const range of requested) {
+          if (!Number.isFinite(range.startFrame) || !Number.isFinite(range.endFrame)) continue;
+          const dirtyStart = Math.max(startFrame, Math.min(endFrame, Math.round(range.startFrame)));
+          const dirtyEnd = Math.max(dirtyStart, Math.min(endFrame, Math.round(range.endFrame)));
+          if (dirtyEnd <= dirtyStart) continue;
+          windows.push({ dirtyStart, dirtyEnd });
+        }
+        if (!windows.length) windows.push({ dirtyStart: startFrame, dirtyEnd: endFrame });
+        for (const { dirtyStart, dirtyEnd } of windows) {
+          replacements.push({
+            startFrame: dirtyStart,
+            endFrame: dirtyEnd,
+            sourceStartFrame: dirtyStart - startFrame,
+            sourceEndFrame: dirtyEnd - startFrame,
+            buffer: phraseBuffer,
+          });
+          this.log(
+            id,
+            `[studio] phrase ${phrase.index} dirty window ${dirtyStart}-${dirtyEnd} (${((dirtyEnd - dirtyStart) / 100).toFixed(2)}s)`,
+          );
+        }
         this.progress(id, base + (78 / phrases.length), 'phrase', `Phrase ${n + 1}/${phrases.length} ready`);
       }
       if (!replacements.length) throw new Error('No phrase audio was produced.');

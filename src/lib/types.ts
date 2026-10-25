@@ -236,6 +236,7 @@ export interface RenderStartPayload {
   binaries?: { neutrino: string | null; converter: string | null };
   phrases?: PhraseInfo[];
   phraseIndices?: number[];
+  phraseRanges?: Array<{ index: number; startFrame: number; endFrame: number }>;
   crossfadeMs?: number;
 }
 

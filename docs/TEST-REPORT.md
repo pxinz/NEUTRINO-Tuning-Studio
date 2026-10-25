@@ -38,14 +38,14 @@ Date of verification: 2026-10-24 · build 1.1.3
 | Packaged Windows app (unpacked) | PASS — launched via Playwright with a fresh user data directory |
 | Packaged Windows 1.1.3 real render | PASS — detected engine/models, rendered the demo, 21.6 s audio, no leading bar |
 | Installer/portable artifacts | PASS — NSIS and portable EXE produced; associated 32 px icon verified |
-| Unit tests | PASS — 25 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics, phrase parsing/splicing, project phrase persistence, native macOS runner/search paths, reference timeline, shortcut matching/formatting) |
+| Unit tests | PASS — 28 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics, phrase parsing/splicing, dirty windows, project phrase persistence, native macOS runner/search paths, reference timeline, shortcut matching/formatting) |
 | Playback alignment | PASS — rendered demo first voiced frame 0.01 s; timing starts `0 100000 pau`; no one-bar lead |
 | Light-mode render progress | PASS — running percentage computed color `rgb(15,23,42)` on `rgb(238,243,250)` |
 | Pencil drag | PASS — drag creates one note with extended duration |
 | Eraser drag | PASS — drag across a pitch row removed multiple notes |
 | Overlap feedback | PASS — warning banner shown and overlapping notes outlined red |
-| Phrase incremental render | PASS — imported sample1 (60 notes), edited pitch in phrase 1, UI switched to 局部重渲染 (Phrase re-render); phrase 1 vocoded with `-p 1`; only 434,006 samples inside phrase 1 changed, 0 samples outside; audio reloaded with no errors |
-| Phrase unit tests | PASS — phrase parser, dirty phrase detection, PCM16 splice/crossfade, project phrase persistence (5 tests) |
+| Dirty-region render (experimental) | PASS — sample1 pitch edit produced a 1.79 s dirty window (frames 500–679); `-p 1` re-vocoded phrase 1; **85,756 samples changed inside the window, 0 outside**; audio reloaded with no errors |
+| Phrase/dirty-window unit tests | PASS — phrase parser, dirty window merging/separation, PCM16 full and sub-window splice/crossfade, project phrase persistence (7 tests) |
 | Reference timeline | PASS — 30 s reference extended transport to 0:30; offset -2 produced 0:28; playback from 0:27.7 stopped at the reference end |
 | Reference-only playback | PASS — a loaded reference played without a rendered vocal (0:01.18 after 1.2 s) |
 | Vocal monitor | PASS — custom in-app menu offers 人声 / 正弦波 / 静音 with icons and a selected check; sine mode plays, mute and vocal modes switch live |
@@ -166,8 +166,8 @@ Tested on Tau v3.2.2 with sample1/MERROW:
   silence lines.
 - Full renders are not sample-identical: WAV correlation between two full runs
   was -0.066, while F0/melspec correlation was 0.990/0.993. Phrase splicing
-  therefore uses a 30 ms crossfade. The UI labels this 局部重渲染（实验性）
-  (Phrase re-render, experimental).
+  therefore uses a 30 ms crossfade. The current feasibility build labels this
+  脏区重渲染（实验性） (Dirty-region re-render, experimental).
 
 Details: [INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
 
