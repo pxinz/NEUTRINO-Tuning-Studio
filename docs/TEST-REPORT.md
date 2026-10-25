@@ -48,7 +48,9 @@ Date of verification: 2026-10-24 · build 1.1.3
 | Phrase unit tests | PASS — phrase parser, dirty phrase detection, PCM16 splice/crossfade, project phrase persistence (5 tests) |
 | Reference timeline | PASS — 30 s reference extended transport to 0:30; offset -2 produced 0:28; playback from 0:27.7 stopped at the reference end |
 | Reference-only playback | PASS — a loaded reference played without a rendered vocal (0:01.18 after 1.2 s) |
-| Quick monitoring mute | PASS — vocal/reference toggle buttons update state and titles during playback |
+| Vocal monitor | PASS — combobox offers 人声 / 正弦波 / 静音; sine mode plays, mute and vocal modes switch live |
+| Empty-state render action | PASS — clicked 渲染人声 inside the timing overlay; full render started and the overlay was replaced by timing data |
+| Empty-state wording | PASS — timing/pitch/dynamics prompts all use the same “请先渲染人声” wording and 渲染人声 button |
 | Playback UI performance | PASS — automated 3 s playback produced no `longtask` entries over 50 ms |
 | Reference/playback unit tests | PASS — positive/negative reference endings and fallback durations (3 tests) |
 

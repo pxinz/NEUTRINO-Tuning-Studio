@@ -277,7 +277,7 @@ export default function DynamicsEditor() {
             <canvas ref={canvasRef} />
             <Playhead />
             {!audio.loaded ? (
-              <div className="empty-overlay compact">
+              <div className="empty-overlay compact" onPointerDown={(e) => e.stopPropagation()}>
                 <Gauge size={28} />
                 <strong>{t('dynamics.noAudio')}</strong>
                 <Button size="sm" variant="primary" onClick={() => void renderVocal()}>

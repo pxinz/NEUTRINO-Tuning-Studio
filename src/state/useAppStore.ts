@@ -105,7 +105,7 @@ interface TransportState {
   loopEnd: number;
   follow: boolean;
   masterVolume: number;
-  vocalMuted: boolean;
+  vocalMode: 'vocal' | 'sine' | 'mute';
 }
 
 interface AudioState {
@@ -270,7 +270,7 @@ export interface AppState {
   setLoopRange(start: number, end: number): void;
   setFollow(follow: boolean): void;
   setMasterVolume(volume: number): void;
-  setVocalMuted(muted: boolean): void;
+  setVocalMode(mode: 'vocal' | 'sine' | 'mute'): void;
 
   renderVocal(): Promise<void>;
   cancelRender(): Promise<void>;
@@ -557,7 +557,7 @@ export const useAppStore = create<AppState>((set, get) => {
         loop: false,
         loopStart: 0,
         loopEnd: 0,
-        vocalMuted: false,
+        vocalMode: 'vocal',
       },
       audio: { ...initialAudio },
       render: { ...initialRender },
@@ -610,7 +610,7 @@ export const useAppStore = create<AppState>((set, get) => {
       loopEnd: 0,
       follow: true,
       masterVolume: 0.9,
-      vocalMuted: false,
+      vocalMode: 'vocal',
     },
     audio: { ...initialAudio },
     render: { ...initialRender },
@@ -887,7 +887,7 @@ export const useAppStore = create<AppState>((set, get) => {
             loop: false,
             loopStart: 0,
             loopEnd: 0,
-            vocalMuted: false,
+            vocalMode: 'vocal',
           },
         }));
         get().fitPitchRange();
@@ -1704,7 +1704,8 @@ export const useAppStore = create<AppState>((set, get) => {
         referenceVolume: st.project.reference?.volume ?? 0.8,
         referenceOffset: st.project.reference?.offset ?? 0,
         referenceMuted: st.project.reference?.muted ?? true,
-        vocalMuted: st.transport.vocalMuted,
+        vocalMode: st.transport.vocalMode,
+        guideF0: st.currentF0,
         dynamicsEnabled: st.project.dynamics.enabled,
         dynamicsPoints: st.project.dynamics.points,
       });
@@ -1790,10 +1791,10 @@ export const useAppStore = create<AppState>((set, get) => {
       void window.api.setSettings({ masterVolume: v });
     },
 
-    setVocalMuted(muted) {
-      set((s) => ({ transport: { ...s.transport, vocalMuted: muted } }));
+    setVocalMode(mode) {
+      set((s) => ({ transport: { ...s.transport, vocalMode: mode } }));
       if (get().transport.playing) {
-        audioEngine.updatePlaybackOptions({ vocalMuted: muted });
+        audioEngine.updatePlaybackOptions({ vocalMode: mode, guideF0: get().currentF0 });
       }
     },
 

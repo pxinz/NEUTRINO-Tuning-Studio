@@ -117,8 +117,9 @@ export const en: Record<string, string> = {
   'transport.master': 'Master',
   'transport.reference': 'Reference',
   'transport.vocal': 'Vocal',
-  'transport.muteVocal': 'Mute vocal',
-  'transport.unmuteVocal': 'Unmute vocal',
+  'transport.vocalMode': 'Vocal monitor',
+  'transport.vocalSine': 'Sine wave',
+  'transport.vocalMute': 'Mute',
   'transport.follow': 'Follow playhead',
   'transport.goStart': 'Go to start',
 
@@ -167,7 +168,7 @@ export const en: Record<string, string> = {
   'timing.title': 'Phoneme timing',
   'timing.hint':
     'Drag a boundary to change when the neighboring phonemes are sung. Timing is preserved on the next render.',
-  'timing.noData': 'Render the score once to generate phoneme timing.',
+  'timing.noData': 'Render the vocal to generate phoneme timing.',
   'timing.phonemes': '{{count}} phonemes',
   'timing.boundary': 'Boundary',
   'timing.reset': 'Reset timing',
@@ -184,7 +185,7 @@ export const en: Record<string, string> = {
   'pitch.title': 'Pitch curve',
   'pitch.hint':
     'Draw the F0 curve, add vibrato, or nudge selected notes. The NEUTRINO vocoder keeps the timbre while following the edited pitch.',
-  'pitch.noData': 'Render the score to load the model pitch curve.',
+  'pitch.noData': 'Render the vocal to load the pitch curve.',
   'pitch.model': 'Model F0',
   'pitch.current': 'Edited F0',
   'pitch.tool.pen': 'Draw pitch',
@@ -224,7 +225,7 @@ export const en: Record<string, string> = {
   'dynamics.reset': 'Reset envelope',
   'dynamics.smooth': 'Smooth',
   'dynamics.applied': 'Applied to playback and export',
-  'dynamics.noAudio': 'Render the score to see the waveform and edit dynamics.',
+  'dynamics.noAudio': 'Render the vocal to see the waveform and edit dynamics.',
   'dynamics.point': 'Point',
   'dynamics.level': 'Level',
   'dynamics.time': 'Time',

@@ -424,7 +424,7 @@ export default function PitchEditor() {
               onScroll={timeline.setPitchScroll}
             />
             {!currentF0 ? (
-              <div className="empty-overlay compact">
+              <div className="empty-overlay compact" onPointerDown={(e) => e.stopPropagation()}>
                 <Waves size={28} />
                 <strong>{t('pitch.noData')}</strong>
                 <Button size="sm" variant="primary" onClick={() => void renderVocal()}>

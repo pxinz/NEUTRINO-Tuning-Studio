@@ -264,7 +264,7 @@ export default function TimingEditor() {
             <canvas ref={canvasRef} />
             <Playhead />
             {!timing ? (
-              <div className="empty-overlay compact">
+              <div className="empty-overlay compact" onPointerDown={(e) => e.stopPropagation()}>
                 <Activity size={28} />
                 <strong>{t('timing.noData')}</strong>
                 <Button size="sm" variant="primary" onClick={() => void renderVocal()}>

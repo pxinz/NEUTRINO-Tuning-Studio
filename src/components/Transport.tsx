@@ -1,6 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  AudioWaveform,
+  ChevronDown,
   Crosshair,
   Music,
   Pause,
@@ -29,7 +31,7 @@ export default function Transport() {
   const setLoop = useAppStore((s) => s.setLoop);
   const setFollow = useAppStore((s) => s.setFollow);
   const setMasterVolume = useAppStore((s) => s.setMasterVolume);
-  const setVocalMuted = useAppStore((s) => s.setVocalMuted);
+  const setVocalMode = useAppStore((s) => s.setVocalMode);
   const reference = project.reference;
   const setReference = useAppStore((s) => s.setReference);
 
@@ -96,15 +98,26 @@ export default function Transport() {
           <span>{t('transport.follow')}</span>
         </button>
         {audio.loaded ? (
-          <button
-            type="button"
-            className={clsx('transport-toggle', !transport.vocalMuted && 'active')}
-            onClick={() => setVocalMuted(!transport.vocalMuted)}
-            title={transport.vocalMuted ? t('transport.unmuteVocal') : t('transport.muteVocal')}
-          >
-            {transport.vocalMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            <span>{t('transport.vocal')}</span>
-          </button>
+          <label className="transport-monitor" title={t('transport.vocalMode')}>
+            {transport.vocalMode === 'sine' ? (
+              <AudioWaveform size={14} />
+            ) : transport.vocalMode === 'mute' ? (
+              <VolumeX size={14} />
+            ) : (
+              <Volume2 size={14} />
+            )}
+            <select
+              className="transport-monitor-select"
+              value={transport.vocalMode}
+              onChange={(e) => setVocalMode(e.target.value as typeof transport.vocalMode)}
+              aria-label={t('transport.vocalMode')}
+            >
+              <option value="vocal">{t('transport.vocal')}</option>
+              <option value="sine">{t('transport.vocalSine')}</option>
+              <option value="mute">{t('transport.vocalMute')}</option>
+            </select>
+            <ChevronDown size={10} />
+          </label>
         ) : null}
         {reference ? (
           <button

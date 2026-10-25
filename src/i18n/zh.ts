@@ -115,8 +115,9 @@ export const zh: Record<string, string> = {
   'transport.master': '总音量',
   'transport.reference': '参考曲',
   'transport.vocal': '人声',
-  'transport.muteVocal': '静音人声',
-  'transport.unmuteVocal': '取消静音人声',
+  'transport.vocalMode': '人声监听',
+  'transport.vocalSine': '正弦波',
+  'transport.vocalMute': '静音',
   'transport.follow': '跟随播放头',
   'transport.goStart': '回到开头',
 
@@ -163,7 +164,7 @@ export const zh: Record<string, string> = {
 
   'timing.title': '音素时序',
   'timing.hint': '拖动边界可以改变相邻音素的演唱时刻。下次渲染会保留这里的修改。',
-  'timing.noData': '请先渲染一次乐谱以生成音素时序。',
+  'timing.noData': '请先渲染人声，以生成音素时序。',
   'timing.phonemes': '{{count}} 个音素',
   'timing.boundary': '边界',
   'timing.reset': '重置时序',
@@ -179,7 +180,7 @@ export const zh: Record<string, string> = {
 
   'pitch.title': '音高曲线',
   'pitch.hint': '绘制 F0 曲线、添加颤音或微调所选音符。NEUTRINO 声码器会保留音色并跟随编辑后的音高。',
-  'pitch.noData': '请先渲染乐谱以载入模型音高曲线。',
+  'pitch.noData': '请先渲染人声，以载入音高曲线。',
   'pitch.model': '模型 F0',
   'pitch.current': '编辑后 F0',
   'pitch.tool.pen': '绘制音高',
@@ -218,7 +219,7 @@ export const zh: Record<string, string> = {
   'dynamics.reset': '重置包络',
   'dynamics.smooth': '平滑',
   'dynamics.applied': '已应用到试听与导出',
-  'dynamics.noAudio': '请先渲染乐谱以显示波形并编辑动态。',
+  'dynamics.noAudio': '请先渲染人声，以显示波形并编辑动态。',
   'dynamics.point': '节点',
   'dynamics.level': '电平',
   'dynamics.time': '时间',

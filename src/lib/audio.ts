@@ -16,7 +16,8 @@ export interface PlayOptions {
   referenceVolume: number;
   referenceOffset: number;
   referenceMuted: boolean;
-  vocalMuted: boolean;
+  vocalMode: 'vocal' | 'sine' | 'mute';
+  guideF0: Float32Array | null;
   dynamicsEnabled: boolean;
   dynamicsPoints: DynamicsPoint[];
 }
@@ -147,6 +148,7 @@ export class AudioEngine {
   referencePeaks: Peaks | null = null;
 
   private vocalSource: AudioBufferSourceNode | null = null;
+  private guideSource: AudioBufferSourceNode | null = null;
   private refSource: AudioBufferSourceNode | null = null;
   private gain: GainNode | null = null;
   private refGain: GainNode | null = null;
@@ -154,6 +156,10 @@ export class AudioEngine {
   private startedAt = 0;
   private startOffset = 0;
   private endTime = 0;
+  private guideBuffer: AudioBuffer | null = null;
+  private guideF0Ref: Float32Array | null = null;
+  private guideEnd = 0;
+  private guideRate = 0;
   private opts: PlayOptions | null = null;
   private timer: number | null = null;
   private playing = false;
@@ -215,10 +221,49 @@ export class AudioEngine {
       this.vocalSource?.stop();
     } catch {}
     try {
+      this.guideSource?.stop();
+    } catch {}
+    try {
       this.refSource?.stop();
     } catch {}
     this.vocalSource = null;
+    this.guideSource = null;
     this.refSource = null;
+  }
+
+  private getGuideBuffer(ctx: AudioContext, f0: Float32Array | null, endTime: number): AudioBuffer | null {
+    if (!f0 || !f0.length || endTime <= 0) return null;
+    if (
+      this.guideBuffer &&
+      this.guideF0Ref === f0 &&
+      this.guideEnd === endTime &&
+      this.guideRate === ctx.sampleRate
+    ) {
+      return this.guideBuffer;
+    }
+    const rate = ctx.sampleRate;
+    const frames = Math.max(1, Math.ceil(endTime * rate));
+    const buffer = ctx.createBuffer(1, frames, rate);
+    const data = buffer.getChannelData(0);
+    let phase = 0;
+    let amplitude = 0;
+    let frequency = 220;
+    const ampCoeff = 1 - Math.exp(-1 / (rate * 0.012));
+    const freqCoeff = 1 - Math.exp(-1 / (rate * 0.008));
+    for (let i = 0; i < frames; i++) {
+      const f0Frame = f0[Math.min(f0.length - 1, Math.floor((i / rate) * 100))] || 0;
+      const voiced = f0Frame > 0;
+      if (voiced) frequency += (f0Frame - frequency) * freqCoeff;
+      amplitude += ((voiced ? 1 : 0) - amplitude) * ampCoeff;
+      phase += (Math.PI * 2 * frequency) / rate;
+      if (phase > Math.PI * 2) phase -= Math.PI * 2;
+      data[i] = Math.sin(phase) * amplitude * 0.16;
+    }
+    this.guideBuffer = buffer;
+    this.guideF0Ref = f0;
+    this.guideEnd = endTime;
+    this.guideRate = rate;
+    return buffer;
   }
 
   private startSources(offset: number, opts: PlayOptions) {
@@ -235,19 +280,31 @@ export class AudioEngine {
     this.opts = opts;
     this.master!.gain.setValueAtTime(Math.max(0, Math.min(1, opts.masterVolume)), now);
 
+    if (this.vocalBuffer && opts.vocalMode === 'vocal') {
+      const src = ctx.createBufferSource();
+      src.buffer = this.vocalBuffer;
+      src.connect(this.gain!);
+      const vocalOffset = Math.max(0, Math.min(this.vocalBuffer.duration, offset));
+      src.start(now, vocalOffset);
+      this.vocalSource = src;
+    }
+
     if (this.vocalBuffer) {
-      if (!opts.vocalMuted) {
-        const src = ctx.createBufferSource();
-        src.buffer = this.vocalBuffer;
-        src.connect(this.gain!);
-        const vocalOffset = Math.max(0, Math.min(this.vocalBuffer.duration, offset));
-        src.start(now, vocalOffset);
-        this.vocalSource = src;
-      }
       if (opts.dynamicsEnabled) {
         scheduleGain(this.gain!.gain, opts.dynamicsPoints, now, offset, this.vocalBuffer.duration);
       } else {
         this.gain!.gain.setValueAtTime(1, now);
+      }
+    }
+
+    if (opts.vocalMode === 'sine') {
+      const guide = this.getGuideBuffer(ctx, opts.guideF0, this.endTime);
+      if (guide) {
+        const src = ctx.createBufferSource();
+        src.buffer = guide;
+        src.connect(this.master!);
+        src.start(now, Math.max(0, Math.min(guide.duration, offset)));
+        this.guideSource = src;
       }
     }
 
@@ -351,6 +408,8 @@ export class AudioEngine {
     this.ctx = null;
     this.vocalBuffer = null;
     this.referenceBuffer = null;
+    this.guideBuffer = null;
+    this.guideF0Ref = null;
   }
 
   async renderMix(options: MixOptions): Promise<Uint8Array> {

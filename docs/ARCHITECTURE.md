@@ -83,10 +83,11 @@ playback and mixdown start partway into its buffer accordingly. The playhead is 
 small absolutely positioned overlay driven directly by `transport.currentTime`.
 Editors and waveform canvases redraw only when their content, zoom, or scroll
 changes, not on every audio tick. Auto-follow is an imperative store
-subscription, so it only re-renders when the viewport actually scrolls. Vocal and
-reference mute are independent monitoring controls; vocal mute applies to
-playback only, while reference mute is saved with the project and also affects
-mixdown.
+subscription, so it only re-renders when the viewport actually scrolls. Vocal
+monitoring can be set to the rendered vocal, a sine-wave guide generated from
+the current F0, or mute; reference monitoring is independent. Vocal monitoring
+applies to playback only, while reference mute is saved with the project and
+also affects mixdown.
 
 `src/lib/audio.ts` wraps one `AudioContext`:
 

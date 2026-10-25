@@ -115,8 +115,9 @@ export const ja: Record<string, string> = {
   'transport.master': 'マスター',
   'transport.reference': '参考音源',
   'transport.vocal': 'ボーカル',
-  'transport.muteVocal': 'ボーカルをミュート',
-  'transport.unmuteVocal': 'ボーカルのミュートを解除',
+  'transport.vocalMode': 'ボーカルモニター',
+  'transport.vocalSine': 'サイン波',
+  'transport.vocalMute': 'ミュート',
   'transport.follow': '再生位置に追従',
   'transport.goStart': '先頭へ',
 
@@ -163,7 +164,7 @@ export const ja: Record<string, string> = {
 
   'timing.title': '音素タイミング',
   'timing.hint': '境界線をドラッグすると、隣り合う音素の歌唱タイミングが変わります。次回レンダリング時に反映されます。',
-  'timing.noData': '音素タイミングを生成するには、一度スコアをレンダリングしてください。',
+  'timing.noData': '音素タイミングを生成するには、先にボーカルをレンダリングしてください。',
   'timing.phonemes': '{{count}} 音素',
   'timing.boundary': '境界',
   'timing.reset': 'タイミングをリセット',
@@ -179,7 +180,7 @@ export const ja: Record<string, string> = {
 
   'pitch.title': 'ピッチカーブ',
   'pitch.hint': 'F0 カーブを描く、ビブラートを付ける、選択範囲を微調整する。NEUTRINO のボコーダーが音色を保ったままピッチに追従します。',
-  'pitch.noData': 'モデルのピッチカーブを読み込むには、スコアをレンダリングしてください。',
+  'pitch.noData': 'ピッチカーブを読み込むには、先にボーカルをレンダリングしてください。',
   'pitch.model': 'モデル F0',
   'pitch.current': '編集後 F0',
   'pitch.tool.pen': 'ピッチを描く',
@@ -218,7 +219,7 @@ export const ja: Record<string, string> = {
   'dynamics.reset': 'エンベロープをリセット',
   'dynamics.smooth': 'スムーズ',
   'dynamics.applied': '再生と書き出しに適用',
-  'dynamics.noAudio': '波形を表示して編集するには、スコアをレンダリングしてください。',
+  'dynamics.noAudio': '波形を表示して編集するには、先にボーカルをレンダリングしてください。',
   'dynamics.point': 'ポイント',
   'dynamics.level': 'レベル',
   'dynamics.time': '時刻',

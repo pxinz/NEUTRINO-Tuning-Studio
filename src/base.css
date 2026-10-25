@@ -530,6 +530,9 @@ kbd { font-family: var(--font-mono); font-size: 9px; padding: 2px 5px; border-ra
 .transport-toggle:hover { background: var(--panel-2); color: var(--text-secondary); }
 .transport-toggle.active { color: var(--accent); background: var(--accent-soft); }
 .transport-toggle span { overflow: hidden; text-overflow: ellipsis; }
+.transport-monitor { display: flex; align-items: center; gap: 4px; height: 26px; padding: 0 7px; border-radius: 6px; background: var(--panel-2); color: var(--accent); font-size: 9px; }
+.transport-monitor-select { appearance: none; background: transparent; border: 0; color: inherit; font: inherit; cursor: pointer; outline: none; padding: 0 2px; }
+.transport-monitor-select option { background: var(--panel); color: var(--text-primary); }
 .master-volume { display: flex; align-items: center; gap: 5px; color: var(--text-muted); width: 138px; flex: none; }
 .master-volume .slider { flex: 1; }
 .master-volume span { font-family: var(--font-mono); font-size: 8px; width: 22px; text-align: right; }
