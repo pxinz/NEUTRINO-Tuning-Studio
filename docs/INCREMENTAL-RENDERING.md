@@ -125,6 +125,37 @@ Measured on sample1 (43.2 s, 48 kHz):
 The UI labels this **脏区重渲染（实验性）/ Dirty-region re-render
 (experimental)**. This remains a feasibility experiment, not a release feature.
 
+## Full re-render comparison
+
+To compare incremental output with a real full re-render, the test:
+
+1. Full-rendered the original sample (`A`).
+2. Edited pitch and performed a dirty-region render (`B`).
+3. Saved the project, removed only its `render` metadata, reopened it, and ran
+   the complete full path again (`C`).
+
+`scripts/e2e-full-vs-incremental.cjs` produces the takes and
+`scripts/compare-renders.py` measures them. On sample1:
+
+| Metric | Result |
+| --- | --- |
+| Length | A/B/C all 2,073,600 samples (43.2 s) |
+| F0 after A/B/C | B and C exactly equal (4,320 frames) |
+| Timing | B and C identical |
+| Melspec | correlation 0.993 |
+| B vs C level | RMS ratio 0.979 |
+| B vs C envelope correlation | 0.955 |
+| B vs C spectral-magnitude correlation | 0.948 |
+| B vs C inside dirty window | envelope 0.951, spectral 0.929 |
+| B vs C outside dirty window | envelope 0.952, spectral 0.949 |
+| Samples changed outside window | incremental 0; full 1,677,500 |
+
+The full re-render changes most samples outside the window because the vocoder
+phase is not stable, even when F0 and timing match. Therefore “outside samples
+are byte-identical” is a correct **incremental-splice invariant**, not a
+comparison against a full re-render. Envelope/spectral/level comparisons are the
+meaningful metrics; the boundary crossfade still needs listening tests.
+
 ## Current render paths
 
 1. **Full** — score, synth settings, model, or no render; regenerates labels,

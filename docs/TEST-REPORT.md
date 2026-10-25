@@ -50,6 +50,8 @@ Date of verification: 2026-10-24 · build 1.1.3
 | Timing dirty-region (experimental) | PASS — moved a timing boundary; `mode=timing` full engine pass then dirty splice `325–357`; **15,303 samples changed inside, 0 outside** |
 | Timing-window headless tests | PASS — null/unchanged input, sub-threshold moves, phoneme-structure rejection, merged and last-boundary windows (4 tests) |
 | Dynamics-only render guard | PASS — after a pitch dirty-render, editing only dynamics reports no audio changes and does not start a render |
+| Full vs incremental audio | MEASURED — F0/timing exact, melspec corr. 0.993; incremental vs full RMS ratio 0.979, envelope corr. 0.955, spectral corr. 0.948; full changes 1,677,500 samples outside the window due phase, incremental 0 |
+| Full vs incremental headless analysis | PASS — `scripts/compare-renders.py` reports windowed envelope/spectral/level metrics; sample equality is not used as a full-render quality metric |
 | Reference timeline | PASS — 30 s reference extended transport to 0:30; offset -2 produced 0:28; playback from 0:27.7 stopped at the reference end |
 | Reference-only playback | PASS — a loaded reference played without a rendered vocal (0:01.18 after 1.2 s) |
 | Vocal monitor | PASS — custom in-app menu offers 人声 / 正弦波 / 静音 with icons and a selected check; sine mode plays, mute and vocal modes switch live |
