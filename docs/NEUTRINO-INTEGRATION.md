@@ -4,8 +4,7 @@ This document records how NEUTRINO Tuning Studio drives the official Tau CLI and
 why the tuning workflow can re-render only part of the pipeline.
 
 The application is a companion tool. It never patches, bundles, or
-redistributes NEUTRINO. Everything below assumes a legitimate local
-installation.
+redistributes NEUTRINO. Everything below assumes a local installation.
 
 ## Installation layout
 
@@ -67,7 +66,7 @@ Options used by the UI:
 
 ## Intermediate file formats
 
-These were verified against Tau v3.2.2 on the local installation.
+These were verified against a local Tau v3.2.2 installation.
 
 ### `timing.lab`
 
@@ -80,7 +79,7 @@ Plain text, one phoneme per line. Times are integers in 100 ns units:
 ```
 
 The app parses this into seconds, draws draggable boundaries in the Timing
-editor, and serialises back. Intervals must remain contiguous; a gap changes
+editor, and serializes back. Intervals must remain contiguous; a gap changes
 the effective duration. The editor enforces a minimum interval and only moves
 the boundary between two adjacent phonemes.
 
@@ -97,7 +96,8 @@ The Pitch editor exposes this curve directly. On a pitch-only render, the app
 writes the edited array to `output.f0`, then invokes NEUTRINO with
 `--skip-timing --skip-f0 --skip-melspec`. Only the vocoder runs. The NEUTRINO
 vocoder follows the supplied F0 while keeping the acoustic timbre, so manual
-pitch and vibrato edits preserve formants better than post-processing the WAV.
+pitch and vibrato edits are made in the vocoder domain rather than by
+post-processing the rendered WAV.
 
 ### `melspec`
 
@@ -118,13 +118,14 @@ Tau also exposes `-p N` (one phrase) and `-i phrases.txt` (phrase trace). A phra
 render writes phrase-sized F0/melspec/WAV while the timing file remains full. When
 combined with skip flags, the F0/melspec inputs must be trimmed to the phrase.
 
-This was verified, but phrase splicing is phase-sensitive and is not enabled in
-the UI yet. Measurements, caveats and the proposed pitch-only implementation are
-in [INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
+This was verified. Pitch-only phrase splicing is now used automatically when only
+a few phrases change; it is experimental and falls back to a full vocode. Timing
+or score changes still use the full render path. Measurements and caveats are in
+[INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
 
 ## Render modes
 
-The UI chooses one of three modes from hashes stored in the project:
+The UI chooses one of four modes from hashes stored in the project:
 
 1. **Full** — score or synth settings changed, or no render exists.
    Regenerates labels, timing, F0, melspec and WAV.
@@ -133,10 +134,13 @@ The UI chooses one of three modes from hashes stored in the project:
    app warps the pitch curve from the old phoneme timeline to the new one,
    writes it, and performs a second vocoder-only pass.
 3. **Vocode** — only pitch changed. Runs with all three skip flags.
+4. **Phrase** — pitch changed and at most four changed phrases cover at most 45%
+   of the song. Slices F0/melspec, runs `-p` per phrase, and crossfades the
+   phrase audio into the previous take. Falls back to Vocode if unavailable.
 
 Score edits clear timing/F0 because note identities and phoneme alignment no
 longer correspond. A full render discards timing edits; pitch edits can be
-carried over by time resampling with a warning, but a clean re-render is
+carried over by time resampling with a warning, but a full re-render is
 recommended after structural score changes.
 
 ## Score generation
@@ -149,8 +153,8 @@ the visible playhead. The exporter therefore prepends a one-division (1/480
 beat) rest when the first note starts at beat 0. At normal tempos that offset is
 under 2 ms, the converter no longer inserts a bar rest, and the rendered F0
 starts at the beginning (verified: first voiced frame ≈ 0.01 s, `timing.lab`
-begins with `0 100000 pau`). Projects rendered with older builds should be
-re-rendered once to benefit from this fix.
+begins with `0 100000 pau`). Projects rendered with earlier versions should be
+re-rendered once to benefit from this change.
 
 The app exports MusicXML 3.1 partwise with:
 

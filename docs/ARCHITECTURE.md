@@ -24,7 +24,7 @@
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-The renderer never gets `child_process` access. Long-running work is orchestrated
+The renderer does not have `child_process` access. Long-running work is orchestrated
 in the main process and reported through one event channel; renderer actions use
 typed `ipcRenderer.invoke` wrappers exposed by the preload script.
 
@@ -84,10 +84,10 @@ dynamics use the same horizontal viewport but no vertical roll.
 - play with source gain automation for the dynamics envelope;
 - mix reference audio at its offset for preview;
 - offline-render vocal or mixdown at the configured sample rate and bit depth,
-  optionally peak-normalising, then encode a RIFF WAV in the renderer and write
+  optionally peak-normalizing, then encode a RIFF WAV in the renderer and write
   it through IPC.
 
-No audio leaves the local machine.
+Audio is processed locally and is not uploaded by the app.
 
 ## Cross-platform process runner
 
@@ -96,17 +96,18 @@ paths are converted to `Z:\...` and `WINEDEBUG=-all` is set. The converter is ru
 with `cwd` set to the NEUTRINO root, because its dictionary lookup is relative.
 
 `electron/lib/render.cjs` constructs argument arrays, captures streams, maps
-progress, verifies output files and kills the process tree on cancel. It never
-shells out, so paths with spaces and Japanese characters are passed intact.
+progress, verifies output files and kills the process tree on cancel. It invokes
+processes without a shell, so paths with spaces and Japanese characters are
+passed intact.
 
 ## Packaging
 
 - electron-builder produces Windows NSIS + portable, Linux AppImage + deb and
   macOS dmg configurations.
 - The application icon is generated from the supplied TS for NEUTRINO artwork
-  by `scripts/make-icon.cjs` with nearest-neighbour scaling and responsive
+  by `scripts/make-icon.cjs` with nearest-neighbor scaling and responsive
   crops (TS-only at small sizes, full lockup at large sizes).
-- NEUTRINO and models are detected at runtime and are never packaged.
+- NEUTRINO and models are detected at runtime and are not packaged.
 
 ## Testing
 

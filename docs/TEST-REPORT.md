@@ -1,6 +1,6 @@
 # Verification report
 
-Date of verification: 2026-10-24 · build 1.1.0
+Date of verification: 2026-10-24 · build 1.1.1
 
 ## Windows host
 
@@ -8,7 +8,7 @@ Date of verification: 2026-10-24 · build 1.1.0
 | --- | --- |
 | OS | Windows 11 build 26200 |
 | CPU/GPU | NVIDIA GeForce RTX 5060 Laptop GPU, 8 GB |
-| NEUTRINO | Tau v3.2.2.stable at `E:\Programs\NEUTRINO` |
+| NEUTRINO | Tau v3.2.2.stable in a local installation |
 | Models | MERROW, NAKUMO, REINA, RUNO, SOMA, ZUNDAMON |
 | Node | v24.11.1 |
 | Electron | 38.8.6 |
@@ -36,7 +36,7 @@ Date of verification: 2026-10-24 · build 1.1.0
 | Log drawer with fixed note row height | PASS — note height 23 CSS px before/after opening log; vertical scrollbar appears |
 | Unsaved close prompt (save/discard/cancel) | PASS |
 | Packaged Windows app (unpacked) | PASS — launched via Playwright with a fresh user data directory |
-| Packaged Windows 1.1.0 real render | PASS — detected engine/models, rendered the demo, 21.6 s audio, no leading bar |
+| Packaged Windows 1.1.1 real render | PASS — detected engine/models, rendered the demo, 21.6 s audio, no leading bar |
 | Installer/portable artifacts | PASS — NSIS and portable EXE produced; associated 32 px icon verified |
 | Unit tests | PASS — 15 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics, phrase parsing/splicing, project phrase persistence) |
 | Playback alignment | PASS — rendered demo first voiced frame 0.01 s; timing starts `0 100000 pau`; no one-bar lead |
@@ -44,7 +44,7 @@ Date of verification: 2026-10-24 · build 1.1.0
 | Pencil drag | PASS — drag creates one note with extended duration |
 | Eraser drag | PASS — drag across a pitch row removed multiple notes |
 | Overlap feedback | PASS — warning banner shown and overlapping notes outlined red |
-| Phrase incremental render | PASS — imported sample1 (60 notes), edited pitch in phrase 1, UI switched to 局部重渲染; phrase 1 vocoded with `-p 1`; only 434,006 samples inside phrase 1 changed, 0 samples outside; audio reloaded with no errors |
+| Phrase incremental render | PASS — imported sample1 (60 notes), edited pitch in phrase 1, UI switched to 局部重渲染 (Phrase re-render); phrase 1 vocoded with `-p 1`; only 434,006 samples inside phrase 1 changed, 0 samples outside; audio reloaded with no errors |
 | Phrase unit tests | PASS — phrase parser, dirty phrase detection, PCM16 splice/crossfade, project phrase persistence (5 tests) |
 
 ### Render log highlights
@@ -57,7 +57,7 @@ inference (timing) / (acoustic)
 progress = 100 %
 finish : 11.350 [sec]
 inference speed : 2.115 [X speed]
-wav length : 24.000 [sec]
+wav length : 21.600 [sec]
 ```
 
 Pitch-only pass log:
@@ -79,8 +79,8 @@ load models : (vocoder model only)
 | Fixed piano-roll height and vertical scrollbar | PASS |
 | Log drawer open/close | PASS |
 | Packaged unpacked Linux app | PASS — launched under WSLg via Playwright |
-| AppImage 1.1.0 (115 MB) | PASS — launched with `APPIMAGE_EXTRACT_AND_RUN=1` under WSLg; light theme checked |
-| deb package 1.1.0 (89 MB) | PASS — built successfully with maintainer metadata |
+| AppImage 1.1.1 (115 MB) | PASS — launched with `APPIMAGE_EXTRACT_AND_RUN=1` under WSLg; light theme checked |
+| deb package 1.1.1 (89 MB) | PASS — built successfully with maintainer metadata |
 | Renderer console errors | none |
 
 The WSL environment used for GUI verification did not have NEUTRINO installed or
@@ -91,10 +91,12 @@ untested environment in the README.
 
 ## macOS
 
-A cross-built **arm64 app zip** was produced on WSL with `@electron/packager`,
-then ad-hoc signed with `rcodesign`:
+A cross-built **arm64 app zip** was produced locally on WSL with
+`@electron/packager`, then ad-hoc signed with `rcodesign`:
 
-`release/mac/NEUTRINO-Tuning-Studio-1.1.0-macOS-arm64-unsigned.zip`
+`release/mac/NEUTRINO-Tuning-Studio-1.1.1-macOS-arm64-unsigned.zip`
+
+This is a local build artifact; `release/` is not committed.
 
 Inspected:
 
@@ -112,25 +114,24 @@ on Windows (`Build for macOS is supported only on macOS`).
 
 ## Packaging
 
-- Windows: `NEUTRINO Tuning Studio Setup 1.1.0.exe` (NSIS) and
-  `NEUTRINO Tuning Studio 1.1.0.exe` (portable) are produced successfully.
+- Windows: `NEUTRINO Tuning Studio Setup 1.1.1.exe` (NSIS) and
+  `NEUTRINO Tuning Studio 1.1.1.exe` (portable) are produced successfully.
 - Linux: AppImage and deb were built in the WSL environment under
   `release/linux/`; both the unpacked app and the AppImage were launched under
   WSLg.
 - Code signing: not configured in this environment, so Windows artifacts are
   unsigned. Users may see SmartScreen warnings.
 
-## Copy audit follow-up
+## Localization review
 
-The Chinese UI copy was revised after review:
+The zh/en/ja UI copy was reviewed for wording and public-repository suitability:
 
-- fixed the unmatched quote in the lyric-symbol explanation;
-- removed unsupported absolute performance/privacy claims;
-- replaced colloquial phrasing (e.g. “重跑”) with neutral terminology;
-- removed second-person phrasing in notices;
-- clarified that the app does not include or distribute NEUTRINO/models;
-- replaced the trademark claim in the non-affiliation notice with an accurate
-  description of the relationship.
+- the lyric-symbol explanation uses consistent punctuation and terminology;
+- notices use neutral, third-person phrasing;
+- engine/model distribution and the non-affiliation relationship are stated
+  explicitly;
+- the experimental phrase-render mode is labelled as experimental in the UI and
+  documentation.
 
 ## Incremental phrase probe
 
@@ -142,16 +143,10 @@ Tested on Tau v3.2.2 with sample1/MERROW:
   silence lines.
 - Full renders are not sample-identical: WAV correlation between two full runs
   was -0.066, while F0/melspec correlation was 0.990/0.993. Phrase splicing
-  therefore uses a 30 ms crossfade. The UI now exposes this as 局部重渲染.
+  therefore uses a 30 ms crossfade. The UI labels this 局部重渲染（实验性）
+  (Phrase re-render, experimental).
 
 Details: [INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
-
-## Brand asset
-
-The supplied “TS for NEUTRINO” artwork is used only for the executable,
-installer, taskbar/window icons and documentation. It is not displayed inside the
-application UI. Icon generation uses nearest-neighbour scaling with responsive
-crops (TS only at 16–48 px, TS for at 64 px, full lockup at 128 px and above).
 
 
 

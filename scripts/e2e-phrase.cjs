@@ -66,7 +66,6 @@ const fs = require('node:fs');
   console.log('LOG_PHRASE_TAIL', log.split(/\r?\n/).filter((l) => /phrase|mode=/.test(l)).slice(-8).join('\n'));
   console.log('AUDIO_STATUS', (await page.locator('.statusbar').innerText()).replace(/\s+/g, ' ').slice(0, 250));
   fs.copyFileSync(path.join(ws, 'output.wav'), path.join(root, 'scratch-phrase', 'after.wav'));
-  }
   console.log('ERRORS', errors.length ? errors.join('\n') : 'none');
   await app.evaluate(({ app }) => app.exit(0));
 })().catch((e) => { console.error(e); process.exit(1); });

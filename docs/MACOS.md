@@ -1,20 +1,25 @@
 # macOS build
 
-The project contains an **arm64 macOS cross-build** in
+## Preview artifact
 
-`release/mac/NEUTRINO-Tuning-Studio-1.1.0-macOS-arm64-unsigned.zip`.
+A local arm64 cross-build can be produced under `release/mac/`, for example:
 
-Important: this artifact was built on WSL from the Electron darwin-arm64
-distribution. It has been inspected (arm64 Mach-O, `.app` structure, framework
-symlinks, ad-hoc signature, icon, Info.plist) but **not executed on macOS**. It is
-not Developer ID signed or notarized. Treat it as a preview for a friend rather
-than a public release.
+`NEUTRINO-Tuning-Studio-<version>-macOS-arm64-unsigned.zip`
 
-## What the friend needs
+`release/` is not committed. The file above is a local build artifact; a public
+preview should be attached to a GitHub Release together with the unsigned/ad-hoc
+notice.
+
+The artifact is built on WSL from the Electron darwin-arm64 distribution. It has
+been inspected (arm64 Mach-O, `.app` structure, framework symlinks, ad-hoc
+signature, icon, Info.plist) but **not executed on macOS**. It is not Developer ID
+signed or notarized. Treat it as a preview build rather than a public release.
+
+## Requirements
 
 - Apple Silicon Mac (M1/M2/M3/M4), macOS 12 or newer.
 - The official **NEUTRINO Tau macOS** package, installed separately.
-- The app moved to `/Applications`.
+- The app in `/Applications`.
 
 Gatekeeper will block the unsigned build. The zip contains
 `Open-Anyway.command` and `README-macOS.txt`. The reliable first launch is from
@@ -52,12 +57,11 @@ Build for macOS is supported only on macOS
 ```
 
 The cross-build above uses `@electron/packager` on Linux, then ad-hoc signs the
-bundle with `rcodesign`. A native Mac run is still the only way to validate
-Gatekeeper, audio device, and NEUTRINO engine integration.
+bundle with `rcodesign`. A native Mac run is still needed to validate Gatekeeper,
+audio devices, and NEUTRINO engine integration.
 
 ## NEUTRINO on macOS
 
-Use the official macOS (Apple Silicon) NEUTRINO package and point the studio at
-the folder containing `Run.sh` and `model/`. The app does not bundle or
-redistribute the engine or voice libraries.
-
+Use the official macOS (Apple Silicon) NEUTRINO package and point the app at the
+folder containing `Run.sh` and `model/`. The app does not bundle or redistribute
+the engine or voice libraries.

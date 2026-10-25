@@ -4,24 +4,23 @@
 
 > 非官方配套程序，与 SHACHI / STUDIO NEUTRINO 无隶属或背书关系。NEUTRINO 引擎与歌声库需单独安装，并遵守各自的许可协议。
 
-![Score editor](docs/screenshots/score.png)
+![Score editor with piano roll and note inspector](docs/screenshots/score.png)
 
 | 时序 Timing | 音高 Pitch | 动态 Dynamics |
 | --- | --- | --- |
-| ![Timing](docs/screenshots/timing.png) | ![Pitch](docs/screenshots/pitch.png) | ![Dynamics](docs/screenshots/dynamics.png) |
+| ![Timing editor with draggable phoneme boundaries](docs/screenshots/timing.png) | ![Pitch curve editor with F0 drawing tools](docs/screenshots/pitch.png) | ![Dynamics envelope editor](docs/screenshots/dynamics.png) |
 
 ## 功能
 
 - **乐谱编辑**：钢琴卷帘绘制/移动/缩放音符；画笔可拖动决定音符长度，橡皮可拖动连续擦除；假名歌词批量编辑、罗马字转假名、换气记号、小节/速度/拍号、MusicXML 导入导出、MIDI 导入。
 - **重叠提示**：出现单声部重叠时，卷帘顶部显示警告，相关音符以红色描边标出。
 - **音素时序**：直接拖动 `timing.lab` 音素边界，重新渲染时使用编辑后的时序。
-- **音高调声**：绘制 F0 曲线、直线、平滑、颤音、移调、按音符自动修正；修改通常只需重跑声码器，比完整渲染更快。
+- **音高调声**：绘制 F0 曲线、直线、平滑、颤音、移调、按音符自动修正；修改通常只需重新运行声码器，比完整渲染更快。
 - **动态包络**：按时间绘制 dB 包络，应用于试听和导出（人声或混音）。
 - **渲染管理**：自动检测 NEUTRINO 与歌声库，选择主/辅助声库、StyleShift、移调、线程、GPU、采样率、位深；实时进度与日志；取消渲染。
-- **增量重渲染**：已支持按阶段复用 `timing/F0/melspec`；只改音高时还会自动识别受影响的 1–4 个乐句，使用 NEUTRINO `-p` 局部重跑声码器并以 30 ms 交叉淡化拼回整曲，未改动区域保持原样。时序/乐谱修改仍走完整渲染。详见 [增量渲染说明](docs/INCREMENTAL-RENDERING.md)。
+- **增量重渲染（实验性）**：已支持按阶段复用 `timing/F0/melspec`；修改音高时会在条件允许的情况下自动只重渲染受影响的乐句，再拼接回整曲；无法安全处理时回退为完整渲染。时序或乐谱修改仍使用完整渲染。实现细节与限制见 [增量渲染说明](docs/INCREMENTAL-RENDERING.md)。
 - **工程与音频**：`.ntstudio` 工程保存乐谱、时序、F0、动态、参考曲与渲染记录；参考曲试听/对齐；WAV/混音导出；播放、循环、缩放、自动跟随。
 - **跨平台与三语**：Windows、macOS、Linux 构建配置；中文/英文/日文完整界面。
-- **克制的品牌呈现**：程序图标只用于可执行文件、安装包、任务栏与窗口；应用界面内仅显示文字品牌，不展示图标。
 - **纵向卷帘滚动**：音符行高固定，底栏展开不会压扁卷帘；滚轮与 Shift+滚轮分别控制两轴，可在设置中切换“水平优先/纵向优先”。
 
 ## 快速开始
@@ -41,7 +40,7 @@
 
 - Windows：NSIS 安装包 + `portable` 绿色版
 - Linux：AppImage + deb
-- macOS：arm64 预览 zip（`release/mac/`，交叉构建、ad-hoc 签名，**未在 macOS 实机验证**；不建议作为正式发布包）。原生 dmg 可用 [macOS 构建说明](docs/MACOS.md) 中的 GitHub Actions 或 Mac 构建。
+- macOS：本地交叉构建的 arm64 预览 zip 位于 `release/mac/`（ad-hoc 签名，**未在 macOS 实机验证**，不建议作为正式发布包）。`release/` 不随仓库提交；如需公开预览，请发布到 GitHub Releases。原生 dmg 可用 [macOS 构建说明](docs/MACOS.md) 中的 GitHub Actions 或 Mac 构建。
 
 应用本身为 MIT 许可。**不包含** NEUTRINO 可执行文件、歌声库或任何模型权重。
 
@@ -81,7 +80,7 @@ neutrino.exe full.lab timing.lab output.f0 output.melspec output.wav model/MERRO
   -n 4 -k 0 -f 0 -s 48000 -b 16 -t -m
 ```
 
-真实引擎相关的 UI 端到端脚本（需要本机 NEUTRINO）：`npm run test:e2e:win`；四项调声/播放修复的专项回归：`npm run test:e2e:ui`；局部重渲染回归：`npm run test:e2e:phrase`；WSL/Linux 界面冒烟测试：`npm run test:e2e:linux`。截图可用 `npm run screenshots` 重生成。
+真实引擎相关的 UI 端到端脚本（需要本地安装 NEUTRINO）：`npm run test:e2e:win`；调声与播放回归测试：`npm run test:e2e:ui`；局部重渲染回归：`npm run test:e2e:phrase`；WSL/Linux 界面冒烟测试：`npm run test:e2e:linux`。截图可用 `npm run screenshots` 重生成。
 
 调声重渲染只使用必要的跳过参数：
 
@@ -92,9 +91,9 @@ neutrino.exe full.lab timing.lab output.f0 output.melspec output.wav model/MERRO
 
 ### 平台说明
 
-- **Windows**：原生运行官方 Windows 版；已在本机 `E:\Programs\NEUTRINO`（Tau v3.2.2）完成真实 GPU 渲染、时序/音高/动态、保存、重开与导出验证。
-- **Linux**：官方提供 Linux（Ubuntu）/在线版，可将设置中的执行模式设为“原生”；如果使用 Windows 版，则设为 Wine。GUI 已在 WSL2 + WSLg（Ubuntu 24.04）完成启动、编辑与纵向滚动验证。
-- **macOS**：官方提供 Apple Silicon 版，选择其目录并使用“原生”即可。当前没有 macOS 环境，构建与运行未实测。
+- **Windows**：原生运行官方 Windows 版。完整渲染、时序/音高/动态编辑、工程保存与导出已在 Windows 11 + NVIDIA GPU + Tau v3.2.2 环境验证；详细环境与结果见[测试报告](docs/TEST-REPORT.md)。
+- **Linux**：官方提供 Linux（Ubuntu）/在线版，可将设置中的执行模式设为“原生”；如果使用 Windows 版，则设为 Wine。界面已在 WSL2 + WSLg 环境完成基本验证；原生引擎尚未在 Linux 实机验证（见测试报告）。
+- **macOS**：官方提供 Apple Silicon 版，选择其目录并使用“原生”即可。macOS 构建与运行尚未在实机验证。
 
 ## 已知限制
 
@@ -107,8 +106,8 @@ neutrino.exe full.lab timing.lab output.f0 output.melspec output.wav model/MERRO
 ## 许可与致谢
 
 - 本程序：MIT，见 [LICENSE](LICENSE)。
-- 品牌标志“TS for NEUTRINO”由项目作者提供，字母使用 MiSans SemiBold（免费商用）；图标按尺寸使用 TS / TS for / 完整字标三种裁切，采用最近邻缩放。详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-- NEUTRINO 与歌声库：© SHACHI / STUDIO NEUTRINO 及各权利人；使用、发布作品前请阅读对应 EULA 与歌声库许可。
+- 品牌标志“TS for NEUTRINO”由项目作者制作，以 MIT 许可随项目发布，不单独限制商用。字母使用 MiSans SemiBold；MiSans 按小米的独立字体许可允许免费商用，详见 [MiSans 官方许可说明](https://hyperos.mi.com/font/en/faq/)。图标按尺寸使用 TS / TS for / 完整字标三种裁切，采用最近邻缩放。详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+- NEUTRINO 与歌声库：© SHACHI / STUDIO NEUTRINO 及各权利人；使用、发布作品前请阅读对应的最终用户许可协议（EULA）与歌声库许可。
 - Electron、React、Vite、Zustand、i18next、fast-xml-parser、pako、midi-file、lucide-react 等开源项目。
 
 更多文档：[NEUTRINO 集成说明](docs/NEUTRINO-INTEGRATION.md) · [架构](docs/ARCHITECTURE.md) · [测试报告](docs/TEST-REPORT.md) · [增量渲染调研](docs/INCREMENTAL-RENDERING.md) · [macOS 构建](docs/MACOS.md) · [VST3 路线图](docs/VST3-ROADMAP.md)。
