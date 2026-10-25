@@ -214,11 +214,11 @@ function buildMenu() {
     {
       label: t('file'),
       submenu: [
-        { label: t('newProject'), accelerator: 'CmdOrCtrl+N', click: () => sendMenu('new-project') },
-        { label: t('openProject'), accelerator: 'CmdOrCtrl+O', click: () => sendMenu('open-project') },
+        { label: t('newProject'), click: () => sendMenu('new-project') },
+        { label: t('openProject'), click: () => sendMenu('open-project') },
         { type: 'separator' },
-        { label: t('save'), accelerator: 'CmdOrCtrl+S', click: () => sendMenu('save-project') },
-        { label: t('saveAs'), accelerator: 'CmdOrCtrl+Shift+S', click: () => sendMenu('save-project-as') },
+        { label: t('save'), click: () => sendMenu('save-project') },
+        { label: t('saveAs'), click: () => sendMenu('save-project-as') },
         { type: 'separator' },
         { label: t('importMusicXML'), click: () => sendMenu('import-musicxml') },
         { label: t('importMIDI'), click: () => sendMenu('import-midi') },
@@ -233,8 +233,8 @@ function buildMenu() {
     {
       label: t('edit'),
       submenu: [
-        { label: t('undo'), accelerator: 'CmdOrCtrl+Z', click: () => sendMenu('undo') },
-        { label: t('redo'), accelerator: 'CmdOrCtrl+Shift+Z', click: () => sendMenu('redo') },
+        { label: t('undo'), click: () => sendMenu('undo') },
+        { label: t('redo'), click: () => sendMenu('redo') },
         { type: 'separator' },
         { label: t('cut'), accelerator: 'CmdOrCtrl+X', click: () => sendMenu('cut') },
         { label: t('copy'), accelerator: 'CmdOrCtrl+C', click: () => sendMenu('copy') },
@@ -246,13 +246,13 @@ function buildMenu() {
     {
       label: t('view'),
       submenu: [
-        { label: t('score'), accelerator: 'CmdOrCtrl+1', click: () => sendMenu('tab-score') },
-        { label: t('timing'), accelerator: 'CmdOrCtrl+2', click: () => sendMenu('tab-timing') },
-        { label: t('pitch'), accelerator: 'CmdOrCtrl+3', click: () => sendMenu('tab-pitch') },
-        { label: t('dynamics'), accelerator: 'CmdOrCtrl+4', click: () => sendMenu('tab-dynamics') },
+        { label: t('score'), click: () => sendMenu('tab-score') },
+        { label: t('timing'), click: () => sendMenu('tab-timing') },
+        { label: t('pitch'), click: () => sendMenu('tab-pitch') },
+        { label: t('dynamics'), click: () => sendMenu('tab-dynamics') },
         { type: 'separator' },
-        { label: t('toggleLog'), accelerator: 'CmdOrCtrl+L', click: () => sendMenu('toggle-log') },
-        { label: t('settings'), accelerator: 'CmdOrCtrl+,', click: () => sendMenu('settings') },
+        { label: t('toggleLog'), click: () => sendMenu('toggle-log') },
+        { label: t('settings'), click: () => sendMenu('settings') },
         { type: 'separator' },
         { label: t('language'), submenu: langSubmenu },
         { label: t('theme'), submenu: themeSubmenu },

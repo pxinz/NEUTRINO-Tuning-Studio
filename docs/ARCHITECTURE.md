@@ -75,6 +75,15 @@ piano-roll row height (`24px`, `pitchScroll`). Wheel behavior is configurable:
 horizontal-first or vertical-first, with Shift reversing the axis. Timing and
 dynamics use the same horizontal viewport but no vertical roll.
 
+## Keyboard shortcuts
+
+`src/lib/shortcuts.ts` owns the action list, portable default bindings (`Mod`
+resolves to Ctrl/Cmd), event-to-binding matching, and display formatting.
+Bindings are persisted in `settings.shortcuts`; the app-level key handler reads
+them at event time so changes take effect immediately. Native menu accelerators
+for these configurable actions are omitted to avoid a second, non-configurable
+key path; menu clicks still dispatch the same actions.
+
 ## Playback timeline and monitoring
 
 The playable timeline ends at the later of the rendered vocal, the score, and

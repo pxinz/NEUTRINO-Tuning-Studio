@@ -10,6 +10,7 @@ import {
   Gauge,
   History,
   Languages,
+  Monitor,
   Moon,
   Music2,
   Play,
@@ -143,7 +144,7 @@ export default function TopBar() {
   const themeItems: MenuItem[] = [
     { label: t('theme.dark'), icon: <Moon size={15} />, onClick: () => void setTheme('dark' as Theme) },
     { label: t('theme.light'), icon: <Sun size={15} />, onClick: () => void setTheme('light' as Theme) },
-    { label: t('theme.system'), onClick: () => void setTheme('system' as Theme) },
+    { label: t('theme.system'), icon: <Monitor size={15} />, onClick: () => void setTheme('system' as Theme) },
   ];
 
   return (
@@ -223,7 +224,7 @@ export default function TopBar() {
           align="right"
           trigger={
             <IconButton
-              icon={theme === 'light' ? <Sun size={17} /> : <Moon size={17} />}
+              icon={theme === 'system' ? <Monitor size={17} /> : theme === 'light' ? <Sun size={17} /> : <Moon size={17} />}
               label={t('topbar.theme')}
             />
           }

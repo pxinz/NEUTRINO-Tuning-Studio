@@ -22,6 +22,25 @@ const DEFAULT_SETTINGS = {
   showWelcome: true,
   autoSave: true,
   masterVolume: 0.9,
+  shortcuts: {
+    playPause: 'Space',
+    stop: 'Shift+Space',
+    render: 'Mod+Enter',
+    newProject: 'Mod+N',
+    openProject: 'Mod+O',
+    saveProject: 'Mod+S',
+    saveAs: 'Mod+Shift+S',
+    undo: 'Mod+Z',
+    redo: 'Mod+Shift+Z',
+    toggleLoop: 'Alt+L',
+    toggleFollow: 'Alt+F',
+    tabScore: 'Mod+1',
+    tabTiming: 'Mod+2',
+    tabPitch: 'Mod+3',
+    tabDynamics: 'Mod+4',
+    toggleLog: 'Mod+L',
+    settings: 'Mod+,',
+  },
 };
 
 function clone(value) {
@@ -32,6 +51,9 @@ function mergeSettings(base, patch) {
   const out = { ...base, ...(patch || {}) };
   if (patch && typeof patch.window === 'object' && patch.window) {
     out.window = { ...(base.window || {}), ...patch.window };
+  }
+  if (patch && typeof patch.shortcuts === 'object' && patch.shortcuts) {
+    out.shortcuts = { ...(base.shortcuts || {}), ...patch.shortcuts };
   }
   if (patch && Array.isArray(patch.recentProjects)) {
     out.recentProjects = patch.recentProjects.slice(0, 12);

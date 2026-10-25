@@ -1,3 +1,5 @@
+import type { ShortcutAction } from './shortcuts';
+
 export type Language = 'auto' | 'zh' | 'en' | 'ja';
 export type Theme = 'dark' | 'light' | 'system';
 export type EditorTab = 'score' | 'timing' | 'pitch' | 'dynamics';
@@ -32,6 +34,7 @@ export interface Settings {
   showWelcome: boolean;
   autoSave: boolean;
   masterVolume: number;
+  shortcuts: Record<ShortcutAction, string>;
 }
 
 export interface AppInfo {

@@ -9,15 +9,17 @@ import {
   Languages,
   Loader2,
   Settings2,
+  Keyboard,
   Sparkles,
   Volume2,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAppStore } from '../state/useAppStore';
 import { Modal, Button, Field, NumberField, Slider, Toggle } from './ui';
+import ShortcutSettings from './ShortcutSettings';
 import type { Language, Settings, Theme } from '../lib/types';
 
-type Tab = 'general' | 'engine' | 'audio' | 'about';
+type Tab = 'general' | 'engine' | 'audio' | 'shortcuts' | 'about';
 
 export default function SettingsModal() {
   const { t } = useTranslation();
@@ -83,6 +85,7 @@ export default function SettingsModal() {
         autoSave: draft.autoSave,
         defaultModel: draft.defaultModel,
         scrollWheelMode: draft.scrollWheelMode,
+        shortcuts: draft.shortcuts,
       });
       if (draft.neutrinoRoot && draft.neutrinoRoot !== neutrino?.root) {
         await refreshEngine({ root: draft.neutrinoRoot, runner: effectiveRunner, wineCommand: draft.wineCommand, silent: true });
@@ -111,14 +114,14 @@ export default function SettingsModal() {
     >
       <div className="settings-layout">
         <nav className="settings-nav">
-          {(['general', 'engine', 'audio', 'about'] as Tab[]).map((id) => (
+          {(['general', 'engine', 'audio', 'shortcuts', 'about'] as Tab[]).map((id) => (
             <button
               key={id}
               type="button"
               className={clsx('settings-tab', tab === id && 'active')}
               onClick={() => setTab(id)}
             >
-              {id === 'general' ? <Languages size={15} /> : id === 'engine' ? <Sparkles size={15} /> : id === 'audio' ? <Volume2 size={15} /> : <Info size={15} />}
+              {id === 'general' ? <Languages size={15} /> : id === 'engine' ? <Sparkles size={15} /> : id === 'audio' ? <Volume2 size={15} /> : id === 'shortcuts' ? <Keyboard size={15} /> : <Info size={15} />}
               {t(`settings.${id}`)}
             </button>
           ))}
@@ -156,6 +159,14 @@ export default function SettingsModal() {
                 <NumberField value={draft.threads} min={1} max={64} onChange={(v) => set('threads', Math.round(v))} />
               </Field>
             </>
+          ) : null}
+
+          {tab === 'shortcuts' && draft.shortcuts ? (
+            <ShortcutSettings
+              value={draft.shortcuts}
+              onChange={(shortcuts) => set('shortcuts', shortcuts)}
+              isMac={appInfo?.platform === 'darwin'}
+            />
           ) : null}
 
           {tab === 'engine' ? (

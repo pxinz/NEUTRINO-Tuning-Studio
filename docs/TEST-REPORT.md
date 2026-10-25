@@ -56,6 +56,8 @@ Date of verification: 2026-10-24 · build 1.1.3
 | Persistent monitor controls | PASS — vocal monitor and reference buttons are always present; reference is disabled until a reference is loaded |
 | Unsaved project prompt | PASS — New/Open and recent-file open show Cancel / Discard changes / Save and continue; discard proceeds without saving |
 | Recent project history | PASS — saving/opening updates the File > Recent projects list and reopening restores the project |
+| Theme follow-system icon | PASS — selecting “follow system” shows a monitor icon instead of the moon |
+| Configurable shortcuts | PASS — Ctrl+, opened settings; recorded Alt+K for loop, saved, and Alt+K toggled loop; duplicate check and reset available |
 | Playback UI performance | PASS — automated 3 s playback produced no `longtask` entries over 50 ms |
 | Reference/playback unit tests | PASS — positive/negative reference endings and fallback durations (3 tests) |
 
