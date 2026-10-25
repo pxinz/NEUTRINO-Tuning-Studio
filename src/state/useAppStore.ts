@@ -73,6 +73,7 @@ import {
 import { musicXmlForNeutrino, importMusicXml, exportMusicXml } from '../lib/musicxml';
 import { importMidi } from '../lib/midi';
 import { checkLyric } from '../lib/lyrics';
+import { timelineEnd } from '../lib/timeline';
 import { dirtyFrameCount, dirtyPhraseIndices } from '../lib/phrases';
 import { audioEngine } from '../lib/audio';
 import {
@@ -104,6 +105,7 @@ interface TransportState {
   loopEnd: number;
   follow: boolean;
   masterVolume: number;
+  vocalMuted: boolean;
 }
 
 interface AudioState {
@@ -268,6 +270,7 @@ export interface AppState {
   setLoopRange(start: number, end: number): void;
   setFollow(follow: boolean): void;
   setMasterVolume(volume: number): void;
+  setVocalMuted(muted: boolean): void;
 
   renderVocal(): Promise<void>;
   cancelRender(): Promise<void>;
@@ -354,25 +357,33 @@ export const useAppStore = create<AppState>((set, get) => {
       const bytes = await window.api.readBinary(path);
       const buffer = await audioEngine.loadVocal(bytes);
       audioEngine.stop();
-      set((s) => ({
-        audio: {
-          ...s.audio,
-          loaded: true,
-          loading: false,
-          duration: buffer.duration,
-          sampleRate: buffer.sampleRate,
-          channels: buffer.numberOfChannels,
-          peaks: audioEngine.vocalPeaks,
-          error: null,
-        },
-        transport: {
-          ...s.transport,
-          playing: false,
-          currentTime: 0,
-          duration: buffer.duration,
-          loopEnd: Math.min(s.transport.loopEnd || buffer.duration, buffer.duration),
-        },
-      }));
+      set((s) => {
+        const duration = timelineEnd(
+          s.project.score,
+          buffer.duration,
+          s.project.reference,
+          s.audio.referenceDuration,
+        );
+        return {
+          audio: {
+            ...s.audio,
+            loaded: true,
+            loading: false,
+            duration: buffer.duration,
+            sampleRate: buffer.sampleRate,
+            channels: buffer.numberOfChannels,
+            peaks: audioEngine.vocalPeaks,
+            error: null,
+          },
+          transport: {
+            ...s.transport,
+            playing: false,
+            currentTime: 0,
+            duration,
+            loopEnd: Math.min(s.transport.loopEnd || duration, duration),
+          },
+        };
+      });
     } catch (err) {
       set((s) => ({
         audio: { ...s.audio, loading: false, error: (err as Error).message },
@@ -385,19 +396,26 @@ export const useAppStore = create<AppState>((set, get) => {
     try {
       const bytes = await window.api.readBinary(path);
       const buffer = await audioEngine.loadReference(bytes);
-      set((s) => ({
-        audio: { ...s.audio, referencePeaks: audioEngine.referencePeaks, referenceDuration: buffer.duration },
-        project: {
-          ...s.project,
-          reference: {
-            path,
-            name: fileBaseName(path),
-            offset: s.project.reference?.offset || 0,
-            volume: s.project.reference?.volume ?? 0.8,
-            muted: s.project.reference?.muted ?? false,
+      set((s) => {
+        const reference = {
+          path,
+          name: fileBaseName(path),
+          offset: s.project.reference?.offset || 0,
+          volume: s.project.reference?.volume ?? 0.8,
+          muted: s.project.reference?.muted ?? false,
+        };
+        const duration = timelineEnd(s.project.score, s.audio.duration, reference, buffer.duration);
+        return {
+          audio: { ...s.audio, referencePeaks: audioEngine.referencePeaks, referenceDuration: buffer.duration },
+          project: { ...s.project, reference },
+          transport: {
+            ...s.transport,
+            duration,
+            currentTime: Math.min(s.transport.currentTime, duration),
+            loopEnd: Math.min(s.transport.loopEnd || duration, duration),
           },
-        },
-      }));
+        };
+      });
       get().pushToast('success', i18n.t('notifications.referenceLoaded'));
     } catch (err) {
       get().pushToast('error', i18n.t('reference.decodeFailed'));
@@ -539,6 +557,7 @@ export const useAppStore = create<AppState>((set, get) => {
         loop: false,
         loopStart: 0,
         loopEnd: 0,
+        vocalMuted: false,
       },
       audio: { ...initialAudio },
       render: { ...initialRender },
@@ -591,6 +610,7 @@ export const useAppStore = create<AppState>((set, get) => {
       loopEnd: 0,
       follow: true,
       masterVolume: 0.9,
+      vocalMuted: false,
     },
     audio: { ...initialAudio },
     render: { ...initialRender },
@@ -867,6 +887,7 @@ export const useAppStore = create<AppState>((set, get) => {
             loop: false,
             loopStart: 0,
             loopEnd: 0,
+            vocalMuted: false,
           },
         }));
         get().fitPitchRange();
@@ -1290,8 +1311,7 @@ export const useAppStore = create<AppState>((set, get) => {
     fitTimeline(width) {
       const s = get();
       const duration = Math.max(
-        s.audio.duration,
-        scoreDurationSeconds(s.project.score),
+        timelineEnd(s.project.score, s.audio.duration, s.project.reference, s.audio.referenceDuration),
         1,
       );
       const pxPerSec = clamp((width - 32) / duration, 8, 600);
@@ -1593,31 +1613,52 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     setReference(patch) {
-      set((s) => ({
-        project: {
-          ...s.project,
-          reference: s.project.reference ? { ...s.project.reference, ...patch } : null,
-          updatedAt: Date.now(),
-        },
-        dirty: true,
-      }));
+      set((s) => {
+        const reference = s.project.reference ? { ...s.project.reference, ...patch } : null;
+        const duration = timelineEnd(
+          s.project.score,
+          s.audio.duration,
+          reference,
+          s.audio.referenceDuration,
+        );
+        return {
+          project: { ...s.project, reference, updatedAt: Date.now() },
+          transport: {
+            ...s.transport,
+            duration,
+            currentTime: Math.min(s.transport.currentTime, duration),
+            loopEnd: Math.min(s.transport.loopEnd || duration, duration),
+          },
+          dirty: true,
+        };
+      });
       if (get().transport.playing) {
         const s = get();
         audioEngine.updatePlaybackOptions({
           referenceVolume: s.project.reference?.volume ?? 0.8,
           referenceOffset: s.project.reference?.offset ?? 0,
           referenceMuted: s.project.reference?.muted ?? false,
+          duration: s.transport.duration,
         });
       }
     },
 
     removeReference() {
       audioEngine.clearReference();
-      set((s) => ({
-        project: { ...s.project, reference: null, updatedAt: Date.now() },
-        audio: { ...s.audio, referencePeaks: null, referenceDuration: 0 },
-        dirty: true,
-      }));
+      set((s) => {
+        const duration = timelineEnd(s.project.score, s.audio.duration, null, 0);
+        return {
+          project: { ...s.project, reference: null, updatedAt: Date.now() },
+          audio: { ...s.audio, referencePeaks: null, referenceDuration: 0 },
+          transport: {
+            ...s.transport,
+            duration,
+            currentTime: Math.min(s.transport.currentTime, duration),
+            loopEnd: Math.min(s.transport.loopEnd || duration, duration),
+          },
+          dirty: true,
+        };
+      });
     },
 
     async loadAudioForPath(path) {
@@ -1625,12 +1666,17 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     async play() {
-      const s = get();
+      let s = get();
       if (!s.audio.loaded) {
         if (s.project.render?.wavPath) {
           await loadAudioForPath(s.project.render.wavPath);
+          s = get();
         }
-        if (!get().audio.loaded) {
+        if (!s.audio.loaded && s.project.reference?.path && !audioEngine.referenceBuffer) {
+          await loadReferenceForPath(s.project.reference.path);
+          s = get();
+        }
+        if (!s.audio.loaded && !audioEngine.referenceBuffer) {
           s.pushToast('info', i18n.t('render.noAudio'));
           return;
         }
@@ -1641,26 +1687,40 @@ export const useAppStore = create<AppState>((set, get) => {
         set((s2) => ({ transport: { ...s2.transport, playing: false } }));
         return;
       }
+      const duration = timelineEnd(
+        st.project.score,
+        st.audio.duration,
+        st.project.reference,
+        st.audio.referenceDuration,
+      );
       audioEngine.setMasterVolume(st.settings?.masterVolume ?? st.transport.masterVolume);
-      const start = st.transport.currentTime >= st.audio.duration - 0.02 ? 0 : st.transport.currentTime;
+      const start = st.transport.currentTime >= duration - 0.02 ? 0 : st.transport.currentTime;
       audioEngine.play(start, {
         loop: st.transport.loop,
         loopStart: st.transport.loopStart,
-        loopEnd: st.transport.loopEnd || st.audio.duration,
+        loopEnd: st.transport.loopEnd || duration,
+        duration,
         masterVolume: st.settings?.masterVolume ?? st.transport.masterVolume,
         referenceVolume: st.project.reference?.volume ?? 0.8,
         referenceOffset: st.project.reference?.offset ?? 0,
         referenceMuted: st.project.reference?.muted ?? true,
+        vocalMuted: st.transport.vocalMuted,
         dynamicsEnabled: st.project.dynamics.enabled,
         dynamicsPoints: st.project.dynamics.points,
       });
-      set((s2) => ({ transport: { ...s2.transport, playing: true, currentTime: start } }));
+      set((s2) => ({
+        transport: { ...s2.transport, playing: true, currentTime: start, duration },
+      }));
     },
 
     pause() {
       audioEngine.pause();
       set((s) => ({
-        transport: { ...s.transport, playing: false, currentTime: audioEngine.getPosition() },
+        transport: {
+          ...s.transport,
+          playing: false,
+          currentTime: Math.min(audioEngine.getPosition(), s.transport.duration),
+        },
       }));
     },
 
@@ -1671,31 +1731,48 @@ export const useAppStore = create<AppState>((set, get) => {
 
     seek(time) {
       const s = get();
-      const t = clamp(time, 0, s.audio.duration || s.transport.duration);
+      const total = timelineEnd(
+        s.project.score,
+        s.audio.duration,
+        s.project.reference,
+        s.audio.referenceDuration,
+      );
+      const t = clamp(time, 0, total);
       audioEngine.seek(t);
-      set((state) => ({ transport: { ...state.transport, currentTime: t } }));
+      set((state) => ({ transport: { ...state.transport, currentTime: t, duration: total } }));
     },
 
     setLoop(loop) {
       const s = get();
+      const total = timelineEnd(
+        s.project.score,
+        s.audio.duration,
+        s.project.reference,
+        s.audio.referenceDuration,
+      );
       const loopStart = s.transport.loopStart;
-      const loopEnd = s.transport.loopEnd || s.audio.duration;
-      set((state) => ({ transport: { ...state.transport, loop, loopStart, loopEnd } }));
+      const loopEnd = s.transport.loopEnd || total;
+      set((state) => ({ transport: { ...state.transport, loop, loopStart, loopEnd, duration: total } }));
       if (s.transport.playing) {
-        audioEngine.updatePlaybackOptions({ loop, loopStart, loopEnd });
+        audioEngine.updatePlaybackOptions({ loop, loopStart, loopEnd, duration: total });
       }
     },
 
     setLoopRange(start, end) {
       const s = get();
-      const total = s.audio.duration || s.transport.duration;
+      const total = timelineEnd(
+        s.project.score,
+        s.audio.duration,
+        s.project.reference,
+        s.audio.referenceDuration,
+      );
       const a = clamp(Math.min(start, end), 0, Math.max(0, total - 0.05));
       const b = clamp(Math.max(start, end), a + 0.05, total);
       set((state) => ({
-        transport: { ...state.transport, loopStart: a, loopEnd: b, loop: true },
+        transport: { ...state.transport, loopStart: a, loopEnd: b, loop: true, duration: total },
       }));
       if (s.transport.playing) {
-        audioEngine.updatePlaybackOptions({ loop: true, loopStart: a, loopEnd: b });
+        audioEngine.updatePlaybackOptions({ loop: true, loopStart: a, loopEnd: b, duration: total });
       }
     },
 
@@ -1711,6 +1788,13 @@ export const useAppStore = create<AppState>((set, get) => {
       }));
       audioEngine.setMasterVolume(v);
       void window.api.setSettings({ masterVolume: v });
+    },
+
+    setVocalMuted(muted) {
+      set((s) => ({ transport: { ...s.transport, vocalMuted: muted } }));
+      if (get().transport.playing) {
+        audioEngine.updatePlaybackOptions({ vocalMuted: muted });
+      }
     },
 
     async renderVocal() {

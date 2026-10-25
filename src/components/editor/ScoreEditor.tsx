@@ -26,12 +26,13 @@ import {
 } from '../../lib/score';
 import { checkLyric } from '../../lib/lyrics';
 import { clamp, midiToName, uid } from '../../lib/time';
-import { drawTimelineGrid, fitCanvas, cssVar, drawPlayhead } from '../../lib/canvas';
+import { drawTimelineGrid, fitCanvas, cssVar } from '../../lib/canvas';
 import { computePitchLayout, PITCH_ROW_HEIGHT } from '../../lib/pitchLayout';
 import TimelineRuler from '../timeline/TimelineRuler';
 import WaveformStrip from '../timeline/WaveformStrip';
 import ZoomBar from '../timeline/ZoomBar';
 import PitchScrollbar from '../timeline/PitchScrollbar';
+import Playhead from '../timeline/Playhead';
 import PianoKeyboard from './PianoKeyboard';
 import { Button, IconButton } from '../ui';
 import type { Note } from '../../lib/types';
@@ -76,7 +77,6 @@ export default function ScoreEditor() {
   const duplicateSelection = useAppStore((s) => s.duplicateSelection);
   const pushHistory = useAppStore((s) => s.pushHistory);
   const viewport = useAppStore((s) => s.viewport);
-  const currentTime = useAppStore((s) => s.transport.currentTime);
   const loop = useAppStore((s) => s.transport.loop);
   const loopStart = useAppStore((s) => s.transport.loopStart);
   const loopEnd = useAppStore((s) => s.transport.loopEnd);
@@ -164,7 +164,6 @@ export default function ScoreEditor() {
         ctx.fillRect(x1, 0, x2 - x1, gridHeight);
       }
     }
-    drawPlayhead(ctx, timelineWidth, gridHeight, (currentTime - scrollSec) * pxPerSec);
   }, [
     timelineWidth,
     gridHeight,
@@ -178,7 +177,6 @@ export default function ScoreEditor() {
     loop,
     loopStart,
     loopEnd,
-    currentTime,
     theme,
   ]);
 
@@ -613,6 +611,7 @@ export default function ScoreEditor() {
             }}
           >
             <canvas ref={canvasRef} />
+            <Playhead />
             {overlaps.length ? (
               <div className="overlap-warning" role="status">
                 <TriangleAlert size={13} />

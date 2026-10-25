@@ -116,6 +116,9 @@ export const en: Record<string, string> = {
   'transport.fit': 'Fit',
   'transport.master': 'Master',
   'transport.reference': 'Reference',
+  'transport.vocal': 'Vocal',
+  'transport.muteVocal': 'Mute vocal',
+  'transport.unmuteVocal': 'Unmute vocal',
   'transport.follow': 'Follow playhead',
   'transport.goStart': 'Go to start',
 
@@ -479,6 +482,7 @@ export const en: Record<string, string> = {
   'reference.offset': 'Offset',
   'reference.volume': 'Volume',
   'reference.mute': 'Mute',
+  'reference.unmute': 'Unmute',
   'reference.remove': 'Remove',
   'reference.none': 'No reference track',
   'reference.hint': 'Used for preview and alignment; it is not sent to the NEUTRINO engine. A mixdown export includes it.',

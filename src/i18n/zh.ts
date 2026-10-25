@@ -114,6 +114,9 @@ export const zh: Record<string, string> = {
   'transport.fit': '适应',
   'transport.master': '总音量',
   'transport.reference': '参考曲',
+  'transport.vocal': '人声',
+  'transport.muteVocal': '静音人声',
+  'transport.unmuteVocal': '取消静音人声',
   'transport.follow': '跟随播放头',
   'transport.goStart': '回到开头',
 
@@ -468,6 +471,7 @@ export const zh: Record<string, string> = {
   'reference.offset': '偏移',
   'reference.volume': '音量',
   'reference.mute': '静音',
+  'reference.unmute': '取消静音',
   'reference.remove': '移除',
   'reference.none': '无参考曲',
   'reference.hint': '用于试听与对齐；不会提交给 NEUTRINO 引擎。导出“混音”时会包含参考曲。',

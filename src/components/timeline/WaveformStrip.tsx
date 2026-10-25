@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../state/useAppStore';
-import { drawPlayhead, drawWaveform, fitCanvas } from '../../lib/canvas';
+import { drawWaveform, fitCanvas } from '../../lib/canvas';
 import { useTimeline } from '../../hooks/useTimeline';
+import Playhead from './Playhead';
 
 export default function WaveformStrip({
   width,
@@ -22,7 +23,6 @@ export default function WaveformStrip({
   const referenceDuration = useAppStore((s) => s.audio.referenceDuration);
   const duration = useAppStore((s) => s.audio.duration);
   const reference = useAppStore((s) => s.project.reference);
-  const currentTime = useAppStore((s) => s.transport.currentTime);
   const seek = useAppStore((s) => s.seek);
   const theme = useAppStore((s) => s.theme);
   const { pxPerSec, scrollSec } = useTimeline(width);
@@ -46,8 +46,6 @@ export default function WaveformStrip({
       referenceDuration,
       reference?.offset || 0,
     );
-    const x = (currentTime - scrollSec) * pxPerSec;
-    drawPlayhead(ctx, width, height, x);
   }, [
     width,
     height,
@@ -57,7 +55,6 @@ export default function WaveformStrip({
     duration,
     pxPerSec,
     scrollSec,
-    currentTime,
     color,
     showReference,
     reference?.offset,
@@ -65,15 +62,17 @@ export default function WaveformStrip({
   ]);
 
   return (
-    <canvas
-      ref={ref}
-      className="waveform-strip"
-      onPointerDown={(e) => {
-        if (!duration) return;
-        const rect = ref.current!.getBoundingClientRect();
-        seek(Math.max(0, scrollSec + (e.clientX - rect.left) / pxPerSec));
-      }}
-      title={t('waveform.seekHint')}
-    />
+    <div className="timeline-strip" style={{ width, height }}>
+      <canvas
+        ref={ref}
+        className="waveform-strip"
+        onPointerDown={(e) => {
+          const rect = ref.current!.getBoundingClientRect();
+          seek(Math.max(0, scrollSec + (e.clientX - rect.left) / pxPerSec));
+        }}
+        title={t('waveform.seekHint')}
+      />
+      <Playhead />
+    </div>
   );
 }

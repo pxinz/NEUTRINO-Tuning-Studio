@@ -5,9 +5,9 @@ import clsx from 'clsx';
 import { useAppStore } from '../../state/useAppStore';
 import { useElementSize } from '../../hooks/useElementSize';
 import { useTimeline } from '../../hooks/useTimeline';
+import Playhead from '../timeline/Playhead';
 import {
   cssVar,
-  drawPlayhead,
   drawTimelineGrid,
   fitCanvas,
   drawRoundedRect,
@@ -32,7 +32,6 @@ export default function DynamicsEditor() {
   const smoothDynamicsEnvelope = useAppStore((s) => s.smoothDynamicsEnvelope);
   const pushHistory = useAppStore((s) => s.pushHistory);
   const score = useAppStore((s) => s.project.score);
-  const currentTime = useAppStore((s) => s.transport.currentTime);
   const theme = useAppStore((s) => s.theme);
   const renderVocal = useAppStore((s) => s.renderVocal);
 
@@ -151,7 +150,6 @@ export default function DynamicsEditor() {
       ctx.stroke();
       ctx.setLineDash([]);
     }
-    drawPlayhead(ctx, timelineWidth, canvasHeight, xAt(currentTime));
   }, [
     timelineWidth,
     canvasHeight,
@@ -160,7 +158,6 @@ export default function DynamicsEditor() {
     score,
     dynamics,
     duration,
-    currentTime,
     hover,
     theme,
   ]);
@@ -278,6 +275,7 @@ export default function DynamicsEditor() {
             onContextMenu={onContextMenu}
           >
             <canvas ref={canvasRef} />
+            <Playhead />
             {!audio.loaded ? (
               <div className="empty-overlay compact">
                 <Gauge size={28} />

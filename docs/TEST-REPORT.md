@@ -1,6 +1,6 @@
 # Verification report
 
-Date of verification: 2026-10-24 · build 1.1.2
+Date of verification: 2026-10-24 · build 1.1.3
 
 ## Windows host
 
@@ -36,9 +36,9 @@ Date of verification: 2026-10-24 · build 1.1.2
 | Log drawer with fixed note row height | PASS — note height 23 CSS px before/after opening log; vertical scrollbar appears |
 | Unsaved close prompt (save/discard/cancel) | PASS |
 | Packaged Windows app (unpacked) | PASS — launched via Playwright with a fresh user data directory |
-| Packaged Windows 1.1.2 real render | PASS — detected engine/models, rendered the demo, 21.6 s audio, no leading bar |
+| Packaged Windows 1.1.3 real render | PASS — detected engine/models, rendered the demo, 21.6 s audio, no leading bar |
 | Installer/portable artifacts | PASS — NSIS and portable EXE produced; associated 32 px icon verified |
-| Unit tests | PASS — 18 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics, phrase parsing/splicing, project phrase persistence, native macOS runner and standard search paths) |
+| Unit tests | PASS — 21 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics, phrase parsing/splicing, project phrase persistence, native macOS runner/search paths, reference timeline) |
 | Playback alignment | PASS — rendered demo first voiced frame 0.01 s; timing starts `0 100000 pau`; no one-bar lead |
 | Light-mode render progress | PASS — running percentage computed color `rgb(15,23,42)` on `rgb(238,243,250)` |
 | Pencil drag | PASS — drag creates one note with extended duration |
@@ -46,6 +46,11 @@ Date of verification: 2026-10-24 · build 1.1.2
 | Overlap feedback | PASS — warning banner shown and overlapping notes outlined red |
 | Phrase incremental render | PASS — imported sample1 (60 notes), edited pitch in phrase 1, UI switched to 局部重渲染 (Phrase re-render); phrase 1 vocoded with `-p 1`; only 434,006 samples inside phrase 1 changed, 0 samples outside; audio reloaded with no errors |
 | Phrase unit tests | PASS — phrase parser, dirty phrase detection, PCM16 splice/crossfade, project phrase persistence (5 tests) |
+| Reference timeline | PASS — 30 s reference extended transport to 0:30; offset -2 produced 0:28; playback from 0:27.7 stopped at the reference end |
+| Reference-only playback | PASS — a loaded reference played without a rendered vocal (0:01.18 after 1.2 s) |
+| Quick monitoring mute | PASS — vocal/reference toggle buttons update state and titles during playback |
+| Playback UI performance | PASS — automated 3 s playback produced no `longtask` entries over 50 ms |
+| Reference/playback unit tests | PASS — positive/negative reference endings and fallback durations (3 tests) |
 
 ### Render log highlights
 
@@ -79,8 +84,8 @@ load models : (vocoder model only)
 | Fixed piano-roll height and vertical scrollbar | PASS |
 | Log drawer open/close | PASS |
 | Packaged unpacked Linux app | PASS — launched under WSLg via Playwright |
-| AppImage 1.1.2 (115 MB) | PASS — launched with `APPIMAGE_EXTRACT_AND_RUN=1` under WSLg; light theme checked |
-| deb package 1.1.2 (89 MB) | PASS — built successfully with maintainer metadata |
+| AppImage 1.1.3 (115 MB) | PASS — launched with `APPIMAGE_EXTRACT_AND_RUN=1` under WSLg; light theme checked |
+| deb package 1.1.3 (89 MB) | PASS — built successfully with maintainer metadata |
 | Renderer console errors | none |
 
 The WSL environment used for GUI verification did not have NEUTRINO installed or
@@ -94,7 +99,7 @@ untested environment in the README.
 A cross-built **arm64 app zip** was produced locally on WSL with
 `@electron/packager`, then ad-hoc signed with `rcodesign`:
 
-`release/mac/NEUTRINO-Tuning-Studio-1.1.2-macOS-arm64-unsigned.zip`
+`release/mac/NEUTRINO-Tuning-Studio-1.1.3-macOS-arm64-unsigned.zip`
 
 This is a local build artifact; `release/` is not committed.
 
@@ -121,8 +126,8 @@ on Windows (`Build for macOS is supported only on macOS`).
 
 ## Packaging
 
-- Windows: `NEUTRINO Tuning Studio Setup 1.1.2.exe` (NSIS) and
-  `NEUTRINO Tuning Studio 1.1.2.exe` (portable) are produced successfully.
+- Windows: `NEUTRINO Tuning Studio Setup 1.1.3.exe` (NSIS) and
+  `NEUTRINO Tuning Studio 1.1.3.exe` (portable) are produced successfully.
 - Linux: AppImage and deb were built in the WSL environment under
   `release/linux/`; both the unpacked app and the AppImage were launched under
   WSLg.
@@ -154,6 +159,7 @@ Tested on Tau v3.2.2 with sample1/MERROW:
   (Phrase re-render, experimental).
 
 Details: [INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
+
 
 
 

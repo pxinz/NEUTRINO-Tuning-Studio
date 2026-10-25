@@ -1,23 +1,24 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useAppStore } from '../state/useAppStore';
 import { clamp } from '../lib/time';
-import { scoreDurationSeconds } from '../lib/score';
+import { timelineEnd } from '../lib/timeline';
 import { PITCH_ROW_HEIGHT } from '../lib/pitchLayout';
 
 export function useTimeline(width: number, options?: { verticalHeight?: number }) {
   const viewport = useAppStore((s) => s.viewport);
   const setViewport = useAppStore((s) => s.setViewport);
   const audioDuration = useAppStore((s) => s.audio.duration);
+  const referenceDuration = useAppStore((s) => s.audio.referenceDuration);
+  const reference = useAppStore((s) => s.project.reference);
   const score = useAppStore((s) => s.project.score);
   const playing = useAppStore((s) => s.transport.playing);
-  const currentTime = useAppStore((s) => s.transport.currentTime);
   const follow = useAppStore((s) => s.transport.follow);
   const wheelMode = useAppStore((s) => s.settings?.scrollWheelMode ?? 'horizontal');
 
   const verticalHeight = options?.verticalHeight ?? 0;
   const duration = useMemo(
-    () => Math.max(audioDuration, scoreDurationSeconds(score), 1),
-    [audioDuration, score],
+    () => Math.max(timelineEnd(score, audioDuration, reference, referenceDuration), 1),
+    [audioDuration, reference, referenceDuration, score],
   );
   const pxPerSec = viewport.pxPerSec;
   const scrollSec = viewport.scrollSec;
@@ -40,12 +41,28 @@ export function useTimeline(width: number, options?: { verticalHeight?: number }
 
   useEffect(() => {
     if (!playing || !follow || width <= 0) return;
-    const x = (currentTime - scrollSec) * pxPerSec;
-    if (x > width * 0.82 || x < 0) {
-      const next = clamp(currentTime - (width / pxPerSec) * 0.35, 0, maxScroll);
-      setViewport({ scrollSec: next });
-    }
-  }, [currentTime, playing, follow, width, pxPerSec, scrollSec, maxScroll, setViewport]);
+    // Subscribe imperatively rather than selecting currentTime, so the heavy
+    // editors do not re-render on every audio tick. Viewport changes still
+    // re-render when the playhead actually needs to scroll.
+    return useAppStore.subscribe((state) => {
+      const view = state.viewport;
+      const x = (state.transport.currentTime - view.scrollSec) * view.pxPerSec;
+      if (x <= width * 0.82 && x >= 0) return;
+      const end = timelineEnd(
+        state.project.score,
+        state.audio.duration,
+        state.project.reference,
+        state.audio.referenceDuration,
+      );
+      const limit = Math.max(0, end - width / view.pxPerSec + 0.5);
+      const next = clamp(
+        state.transport.currentTime - (width / view.pxPerSec) * 0.35,
+        0,
+        limit,
+      );
+      if (Math.abs(next - view.scrollSec) > 0.01) setViewport({ scrollSec: next });
+    });
+  }, [playing, follow, width, setViewport]);
 
   const timeToX = useCallback(
     (time: number) => (time - scrollSec) * pxPerSec,

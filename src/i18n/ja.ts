@@ -114,6 +114,9 @@ export const ja: Record<string, string> = {
   'transport.fit': '全体表示',
   'transport.master': 'マスター',
   'transport.reference': '参考音源',
+  'transport.vocal': 'ボーカル',
+  'transport.muteVocal': 'ボーカルをミュート',
+  'transport.unmuteVocal': 'ボーカルのミュートを解除',
   'transport.follow': '再生位置に追従',
   'transport.goStart': '先頭へ',
 
@@ -468,6 +471,7 @@ export const ja: Record<string, string> = {
   'reference.offset': 'オフセット',
   'reference.volume': '音量',
   'reference.mute': 'ミュート',
+  'reference.unmute': 'ミュートを解除',
   'reference.remove': '削除',
   'reference.none': '参考音源なし',
   'reference.hint': '試聴と位置合わせに使用します。NEUTRINO エンジンには送信されません。「ミックス」を書き出すと参考音源が含まれます。',

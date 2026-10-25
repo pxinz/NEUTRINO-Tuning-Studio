@@ -15,6 +15,7 @@ import clsx from 'clsx';
 import { useAppStore } from '../state/useAppStore';
 import { IconButton, Slider } from './ui';
 import { formatTime } from '../lib/time';
+import { timelineEnd } from '../lib/timeline';
 
 export default function Transport() {
   const { t } = useTranslation();
@@ -28,11 +29,15 @@ export default function Transport() {
   const setLoop = useAppStore((s) => s.setLoop);
   const setFollow = useAppStore((s) => s.setFollow);
   const setMasterVolume = useAppStore((s) => s.setMasterVolume);
+  const setVocalMuted = useAppStore((s) => s.setVocalMuted);
   const reference = project.reference;
   const setReference = useAppStore((s) => s.setReference);
 
-  const duration = audio.duration || transport.duration || 0;
-  const hasAudio = audio.loaded;
+  const duration =
+    timelineEnd(project.score, audio.duration, reference, audio.referenceDuration) ||
+    transport.duration ||
+    0;
+  const hasAudio = audio.loaded || Boolean(reference && audio.referenceDuration > 0);
   const bpm = project.score.tempos[0]?.bpm || 100;
 
   return (
@@ -90,15 +95,26 @@ export default function Transport() {
           <Crosshair size={14} />
           <span>{t('transport.follow')}</span>
         </button>
+        {audio.loaded ? (
+          <button
+            type="button"
+            className={clsx('transport-toggle', !transport.vocalMuted && 'active')}
+            onClick={() => setVocalMuted(!transport.vocalMuted)}
+            title={transport.vocalMuted ? t('transport.unmuteVocal') : t('transport.muteVocal')}
+          >
+            {transport.vocalMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+            <span>{t('transport.vocal')}</span>
+          </button>
+        ) : null}
         {reference ? (
           <button
             type="button"
             className={clsx('transport-toggle', !reference.muted && 'active')}
             onClick={() => setReference({ muted: !reference.muted })}
-            title={t('reference.mute')}
+            title={reference.muted ? t('reference.unmute') : t('reference.mute')}
           >
             {reference.muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            <span>{reference.name || t('transport.reference')}</span>
+            <span>{t('transport.reference')}</span>
           </button>
         ) : null}
       </div>

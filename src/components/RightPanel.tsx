@@ -572,9 +572,10 @@ export default function RightPanel() {
                 <Field label={t('reference.offset')}>
                   <NumberField
                     value={project.reference.offset}
+                    min={-3600}
                     step={0.1}
                     suffix="s"
-                    onChange={(v) => setReference({ offset: Math.max(0, v) })}
+                    onChange={(v) => setReference({ offset: v })}
                   />
                 </Field>
                 <Field label={`${t('reference.volume')} ${Math.round(project.reference.volume * 100)}%`}>

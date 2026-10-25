@@ -16,9 +16,9 @@ import clsx from 'clsx';
 import { useAppStore } from '../../state/useAppStore';
 import { useElementSize } from '../../hooks/useElementSize';
 import { useTimeline } from '../../hooks/useTimeline';
+import Playhead from '../timeline/Playhead';
 import {
   cssVar,
-  drawPlayhead,
   drawRoundedRect,
   drawTimelineGrid,
   fitCanvas,
@@ -57,7 +57,6 @@ export default function PitchEditor() {
   const pushHistory = useAppStore((s) => s.pushHistory);
   const score = useAppStore((s) => s.project.score);
   const viewport = useAppStore((s) => s.viewport);
-  const currentTime = useAppStore((s) => s.transport.currentTime);
   const theme = useAppStore((s) => s.theme);
   const renderVocal = useAppStore((s) => s.renderVocal);
   const seek = useAppStore((s) => s.seek);
@@ -222,7 +221,6 @@ export default function PitchEditor() {
       ctx.fillText(`${freq.toFixed(1)} Hz  ${midiToName(Math.round(midi))}`, timelineWidth - 114, 20);
     }
 
-    drawPlayhead(ctx, timelineWidth, canvasHeight, xAtTime(currentTime));
   }, [
     timelineWidth,
     canvasHeight,
@@ -238,7 +236,6 @@ export default function PitchEditor() {
     rowOffset,
     pxPerSec,
     scrollSec,
-    currentTime,
     theme,
     tool,
   ]);
@@ -418,6 +415,7 @@ export default function PitchEditor() {
             onPointerLeave={() => setCursor(null)}
           >
             <canvas ref={canvasRef} />
+            <Playhead />
             <PitchScrollbar
               height={canvasHeight}
               contentHeight={pitchLayout.contentHeight}

@@ -11,10 +11,12 @@ export interface PlayOptions {
   loop: boolean;
   loopStart: number;
   loopEnd: number;
+  duration: number;
   masterVolume: number;
   referenceVolume: number;
   referenceOffset: number;
   referenceMuted: boolean;
+  vocalMuted: boolean;
   dynamicsEnabled: boolean;
   dynamicsPoints: DynamicsPoint[];
 }
@@ -151,6 +153,7 @@ export class AudioEngine {
   private master: GainNode | null = null;
   private startedAt = 0;
   private startOffset = 0;
+  private endTime = 0;
   private opts: PlayOptions | null = null;
   private timer: number | null = null;
   private playing = false;
@@ -195,7 +198,7 @@ export class AudioEngine {
   }
 
   get duration(): number {
-    return this.vocalBuffer ? this.vocalBuffer.duration : 0;
+    return this.endTime;
   }
 
   get isPlaying(): boolean {
@@ -221,24 +224,31 @@ export class AudioEngine {
   private startSources(offset: number, opts: PlayOptions) {
     const ctx = this.ensureContext();
     this.stopSources();
-    if (!this.vocalBuffer) return;
+    const vocalDuration = this.vocalBuffer?.duration ?? 0;
+    const refEnd = this.referenceBuffer
+      ? opts.referenceOffset + this.referenceBuffer.duration
+      : 0;
+    this.endTime = Math.max(opts.duration || 0, vocalDuration, refEnd, 0);
     const now = ctx.currentTime + 0.02;
     this.startedAt = now;
     this.startOffset = offset;
     this.opts = opts;
     this.master!.gain.setValueAtTime(Math.max(0, Math.min(1, opts.masterVolume)), now);
 
-    const src = ctx.createBufferSource();
-    src.buffer = this.vocalBuffer;
-    src.connect(this.gain!);
-    const vocalOffset = Math.max(0, Math.min(this.vocalBuffer.duration, offset));
-    src.start(now, vocalOffset);
-    this.vocalSource = src;
-
-    if (opts.dynamicsEnabled) {
-      scheduleGain(this.gain!.gain, opts.dynamicsPoints, now, offset, this.vocalBuffer.duration);
-    } else {
-      this.gain!.gain.setValueAtTime(1, now);
+    if (this.vocalBuffer) {
+      if (!opts.vocalMuted) {
+        const src = ctx.createBufferSource();
+        src.buffer = this.vocalBuffer;
+        src.connect(this.gain!);
+        const vocalOffset = Math.max(0, Math.min(this.vocalBuffer.duration, offset));
+        src.start(now, vocalOffset);
+        this.vocalSource = src;
+      }
+      if (opts.dynamicsEnabled) {
+        scheduleGain(this.gain!.gain, opts.dynamicsPoints, now, offset, this.vocalBuffer.duration);
+      } else {
+        this.gain!.gain.setValueAtTime(1, now);
+      }
     }
 
     if (this.referenceBuffer && !opts.referenceMuted && opts.referenceVolume > 0) {
@@ -275,12 +285,12 @@ export class AudioEngine {
         this.onTick?.(opts.loopStart);
         return;
       }
-    } else if (pos >= this.duration - 0.01) {
+    } else if (pos >= this.endTime - 0.01) {
       this.pause();
       this.onEnded?.();
       return;
     }
-    this.onTick?.(Math.min(pos, this.duration));
+    this.onTick?.(Math.min(pos, this.endTime));
   }
 
   play(offset: number, opts: PlayOptions) {
@@ -367,7 +377,10 @@ export class AudioEngine {
       refSrc.connect(refGain);
       refGain.connect(ctx.destination);
       const when = Math.max(0, options.referenceOffset);
-      if (when < duration) refSrc.start(when);
+      const bufferOffset = Math.max(0, -options.referenceOffset);
+      if (when < duration && bufferOffset < this.referenceBuffer.duration) {
+        refSrc.start(when, bufferOffset);
+      }
     }
 
     const rendered = await ctx.startRendering();

@@ -5,10 +5,11 @@ import clsx from 'clsx';
 import { useAppStore } from '../../state/useAppStore';
 import { useElementSize } from '../../hooks/useElementSize';
 import { useTimeline } from '../../hooks/useTimeline';
-import { drawNoteLane, drawPlayhead, drawTimelineGrid, fitCanvas, cssVar, drawRoundedRect } from '../../lib/canvas';
+import { drawNoteLane, drawTimelineGrid, fitCanvas, cssVar, drawRoundedRect } from '../../lib/canvas';
 import TimelineRuler from '../timeline/TimelineRuler';
 import WaveformStrip from '../timeline/WaveformStrip';
 import ZoomBar from '../timeline/ZoomBar';
+import Playhead from '../timeline/Playhead';
 import { Button } from '../ui';
 
 const VOWELS = new Set(['a', 'i', 'u', 'e', 'o', 'N', 'n']);
@@ -32,7 +33,6 @@ export default function TimingEditor() {
   const pushHistory = useAppStore((s) => s.pushHistory);
   const renderVocal = useAppStore((s) => s.renderVocal);
   const render = useAppStore((s) => s.render);
-  const currentTime = useAppStore((s) => s.transport.currentTime);
   const score = useAppStore((s) => s.project.score);
   const player = useAppStore((s) => s.play);
   const seek = useAppStore((s) => s.seek);
@@ -136,7 +136,6 @@ export default function TimingEditor() {
         ctx.fill();
       }
     }
-    drawPlayhead(ctx, timelineWidth, canvasHeight, (currentTime - scrollSec) * pxPerSec);
   }, [
     timelineWidth,
     canvasHeight,
@@ -144,7 +143,6 @@ export default function TimingEditor() {
     score,
     pxPerSec,
     scrollSec,
-    currentTime,
     selectedPhoneme,
     hover,
     theme,
@@ -264,6 +262,7 @@ export default function TimingEditor() {
             onPointerLeave={() => setHover(null)}
           >
             <canvas ref={canvasRef} />
+            <Playhead />
             {!timing ? (
               <div className="empty-overlay compact">
                 <Activity size={28} />

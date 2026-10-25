@@ -75,7 +75,18 @@ piano-roll row height (`24px`, `pitchScroll`). Wheel behavior is configurable:
 horizontal-first or vertical-first, with Shift reversing the axis. Timing and
 dynamics use the same horizontal viewport but no vertical roll.
 
-## Audio
+## Playback timeline and monitoring
+
+The playable timeline ends at the later of the rendered vocal, the score, and
+`reference.offset + reference.duration`. A reference may have a negative offset;
+playback and mixdown start partway into its buffer accordingly. The playhead is a
+small absolutely positioned overlay driven directly by `transport.currentTime`.
+Editors and waveform canvases redraw only when their content, zoom, or scroll
+changes, not on every audio tick. Auto-follow is an imperative store
+subscription, so it only re-renders when the viewport actually scrolls. Vocal and
+reference mute are independent monitoring controls; vocal mute applies to
+playback only, while reference mute is saved with the project and also affects
+mixdown.
 
 `src/lib/audio.ts` wraps one `AudioContext`:
 

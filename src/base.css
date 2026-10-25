@@ -265,7 +265,34 @@ kbd { font-family: var(--font-mono); font-size: 9px; padding: 2px 5px; border-ra
 .wave-line { height: 60px; }
 .timeline-gutter { width: 58px; flex: none; background: var(--panel); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .wave-gutter { display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+.timeline-strip { position: relative; flex: none; overflow: hidden; line-height: 0; }
+.grid-surface .playhead { z-index: 2; }
+.timeline-strip > canvas { display: block; }
 .timeline-ruler, .waveform-strip { display: block; flex: none; cursor: crosshair; }
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1.5px;
+  background: var(--accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 55%, transparent);
+  pointer-events: none;
+  z-index: 20;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+.playhead::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -3.5px;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--accent);
+}
 .timeline-grid-row { display: flex; flex: 1; min-height: 0; }
 .piano-keyboard { width: 58px; flex: none; overflow: hidden; background: var(--panel); border-right: 1px solid var(--border); position: relative; }
 .piano-keys-inner { position: absolute; left: 0; right: 0; }
