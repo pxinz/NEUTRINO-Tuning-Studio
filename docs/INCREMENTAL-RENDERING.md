@@ -156,6 +156,9 @@ are byte-identical” is a correct **incremental-splice invariant**, not a
 comparison against a full re-render. Envelope/spectral/level comparisons are the
 meaningful metrics; the boundary crossfade still needs listening tests.
 
+Listening material and a suggested comparison order are in
+[`listening/dirty-region/README.md`](listening/dirty-region/README.md).
+
 ## Current render paths
 
 1. **Full** — score, synth settings, model, or no render; regenerates labels,
