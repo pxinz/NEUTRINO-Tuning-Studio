@@ -74,6 +74,17 @@ const fs = require('node:fs');
   console.log('LOG_PHRASE_TAIL', log.split(/\r?\n/).filter((l) => /phrase|mode=/.test(l)).slice(-8).join('\n'));
   console.log('AUDIO_STATUS', (await page.locator('.statusbar').innerText()).replace(/\s+/g, ' ').slice(0, 250));
   fs.copyFileSync(path.join(ws, 'output.wav'), path.join(root, 'scratch-phrase', 'after.wav'));
+
+  // After a pitch-based dirty render, a dynamics-only render must be a no-op.
+  await page.locator('.tab', { hasText: '动态' }).click();
+  await page.waitForTimeout(400);
+  const dyn = await page.locator('.dynamics-surface').boundingBox();
+  if (dyn) await page.mouse.click(dyn.x + dyn.width * 0.4, dyn.y + dyn.height * 0.5);
+  await page.waitForTimeout(300);
+  await page.locator('.render-primary').click();
+  await page.waitForTimeout(500);
+  console.log('DYNAMICS_RENDER_RUNNING', await page.locator('.render-btn.running').count());
+  console.log('TOAST_TEXT', await page.locator('.toast').last().innerText().catch(() => ''));
   console.log('ERRORS', errors.length ? errors.join('\n') : 'none');
   await app.evaluate(({ app }) => app.exit(0));
 })().catch((e) => { console.error(e); process.exit(1); });

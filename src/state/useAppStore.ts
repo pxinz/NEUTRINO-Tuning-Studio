@@ -75,7 +75,7 @@ import { musicXmlForNeutrino, importMusicXml, exportMusicXml } from '../lib/musi
 import { importMidi } from '../lib/midi';
 import { checkLyric } from '../lib/lyrics';
 import { timelineEnd } from '../lib/timeline';
-import { dirtyPhraseRanges } from '../lib/phrases';
+import { dirtyPhraseRanges, f0Changed } from '../lib/phrases';
 import { audioEngine } from '../lib/audio';
 import {
   clamp,
@@ -1867,15 +1867,30 @@ export const useAppStore = create<AppState>((set, get) => {
       const currentTimingHash = s.timing ? timingHash(s.timing.text) : '';
       const timingChanged = Boolean(s.timing && rendered && rendered.timingHash !== currentTimingHash);
       let mode: RenderMode;
+      let previousF0: Float32Array | null = null;
       if (!rendered || rendered.scoreHash !== scoreHash || rendered.synthHash !== synthSig) {
         mode = 'full';
       } else if (timingChanged) {
         mode = 'timing';
-      } else if (s.pitchEdited) {
-        mode = 'vocode';
       } else {
-        s.pushToast('info', i18n.t('notifications.noAudioChanges'));
-        return;
+        if (s.currentF0 && rendered.f0Path) {
+          try {
+            const bytes = await window.api.readBinary(rendered.f0Path);
+            previousF0 = bytes ? parseF0(new Uint8Array(bytes)) : null;
+          } catch {
+            previousF0 = null;
+          }
+        }
+        const currentF0 = s.currentF0;
+        let pitchChanged = false;
+        if (currentF0) {
+          pitchChanged = previousF0 ? f0Changed(previousF0, currentF0) : s.pitchEdited;
+        }
+        if (!pitchChanged) {
+          s.pushToast('info', i18n.t('notifications.noAudioChanges'));
+          return;
+        }
+        mode = 'vocode';
       }
       const timingWindows =
         mode === 'timing' && s.timingBase && s.timing ? dirtyTimingWindows(s.timingBase, s.timing) : null;
@@ -1898,32 +1913,25 @@ export const useAppStore = create<AppState>((set, get) => {
       if (
         mode === 'vocode' &&
         rendered?.phrases?.length &&
+        previousF0 &&
         s.currentF0 &&
-        rendered.f0Path
+        previousF0.length === s.currentF0.length
       ) {
-        try {
-          const bytes = await window.api.readBinary(rendered.f0Path);
-          const previous = bytes ? parseF0(new Uint8Array(bytes)) : null;
-          if (previous && previous.length === s.currentF0.length) {
-            const ranges = dirtyPhraseRanges(rendered.phrases, previous, s.currentF0);
-            const changedFrames = ranges.reduce((sum, range) => sum + range.changedFrames, 0);
-            const phraseCount = new Set(ranges.map((range) => range.index)).size;
-            if (
-              ranges.length > 0 &&
-              phraseCount <= 8 &&
-              changedFrames > 0 &&
-              changedFrames <= s.currentF0.length * 0.5
-            ) {
-              mode = 'phrase';
-              phrasePlan = {
-                phrases: rendered.phrases,
-                indices: [...new Set(ranges.map((range) => range.index))],
-                ranges: ranges.map(({ index, startFrame, endFrame }) => ({ index, startFrame, endFrame })),
-              };
-            }
-          }
-        } catch {
-          // Missing/corrupt previous F0: safely fall back to a full vocode.
+        const ranges = dirtyPhraseRanges(rendered.phrases, previousF0, s.currentF0);
+        const changedFrames = ranges.reduce((sum, range) => sum + range.changedFrames, 0);
+        const phraseCount = new Set(ranges.map((range) => range.index)).size;
+        if (
+          ranges.length > 0 &&
+          phraseCount <= 8 &&
+          changedFrames > 0 &&
+          changedFrames <= s.currentF0.length * 0.5
+        ) {
+          mode = 'phrase';
+          phrasePlan = {
+            phrases: rendered.phrases,
+            indices: [...new Set(ranges.map((range) => range.index))],
+            ranges: ranges.map(({ index, startFrame, endFrame }) => ({ index, startFrame, endFrame })),
+          };
         }
       }
 

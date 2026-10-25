@@ -104,16 +104,20 @@ quality should be auditioned.
   final WAV is replaced only after all windows succeed. A missing phrase map,
   too many changed phrases, or invalid windows fall back to a full vocode.
   Cancellation leaves the previous take untouched.
-- Unit tests cover phrase parsing, dirty window detection (merged and separated
-  windows), PCM16 sub-window splicing, and project phrase persistence. A
-  real-engine Playwright test imports sample1, changes pitch in phrase 1, and
-  verifies the changed-sample boundaries.
+- Headless tests cover phrase parsing, dirty window detection (merged and
+  separated windows), F0 thresholds, empty/mismatched/silent input, boundary
+  clamping, PCM16 full/sub-window/multi-window splicing, truncated source
+  windows, format rejection, and project phrase persistence. Real-engine
+  Playwright tests cover one and two pitch windows, timing windows, and the
+  dynamics-only no-op guard.
 
 Measured on sample1 (43.2 s, 48 kHz):
 
 - Pitch edit: a **1.79 s** dirty window (frames 500–679); **85,756 samples
   changed inside, 0 outside**. The previous whole-phrase splice changed roughly
   434,000 samples.
+- Two separated pitch edits in one phrase: windows `500–679` and `878–1016`;
+  **151,921 samples changed inside the union, 0 outside**.
 - Timing boundary edit: a **0.32 s** dirty window (frames 325–357); **15,303
   samples changed inside, 0 outside**. The timing engine pass was still full;
   only the audio replacement was dirty-region.

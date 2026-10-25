@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRequire } from 'node:module';
-import { dirtyFrameCount, dirtyPhraseIndices, dirtyPhraseRanges } from '../src/lib/phrases';
+import { dirtyFrameCount, dirtyPhraseIndices, dirtyPhraseRanges, f0Changed } from '../src/lib/phrases';
 import type { PhraseInfo } from '../src/lib/types';
 
 const require = createRequire(import.meta.url);
@@ -91,6 +91,36 @@ describe('phrase lists', () => {
     expect(ranges[1]).toMatchObject({ startFrame: 145, endFrame: 156 });
     expect(dirtyPhraseIndices(phrases, previous, current)).toEqual([1]);
   });
+
+  it('handles empty, mismatched, silent and boundary-clamped input', () => {
+    expect(dirtyPhraseRanges([], new Float32Array(0), new Float32Array(0))).toEqual([]);
+    expect(dirtyPhraseRanges([{ index: 1, startFrame: 0, endFrame: 10, sung: true }], new Float32Array(5), new Float32Array(6))).toEqual([]);
+    const silent: PhraseInfo = { index: 1, startFrame: 0, endFrame: 10, sung: false };
+    expect(dirtyPhraseRanges([silent], new Float32Array(10), new Float32Array(10).fill(220))).toEqual([]);
+    const phrases: PhraseInfo[] = [{ index: 1, startFrame: 5, endFrame: 10, sung: true }];
+    const previous = new Float32Array(10);
+    const current = new Float32Array(10);
+    current[9] = 220;
+    const range = dirtyPhraseRanges(phrases, previous, current)[0];
+    expect(range.startFrame).toBe(5);
+    expect(range.endFrame).toBe(10);
+    expect(range.changedFrames).toBe(1);
+  });
+
+  it('detects F0 differences while ignoring sub-threshold jitter', () => {
+    const a = new Float32Array([0, 220, 440]);
+    expect(f0Changed(a, a.slice())).toBe(false);
+    const jitter = a.slice();
+    jitter[1] += 0.01;
+    expect(f0Changed(a, jitter)).toBe(false);
+    const changed = a.slice();
+    changed[2] = 441;
+    expect(f0Changed(a, changed)).toBe(true);
+    const voiced = a.slice();
+    voiced[1] = 0;
+    expect(f0Changed(a, voiced)).toBe(true);
+    expect(f0Changed(a, new Float32Array(2))).toBe(true);
+  });
 });
 
 describe('phrase WAV splicing', () => {
@@ -128,6 +158,71 @@ describe('phrase WAV splicing', () => {
     expect(sampleAt(9600)).toBeCloseTo(0.9, 2);
     expect(sampleAt(10079)).toBeCloseTo(0.9, 2);
     expect(sampleAt(10080)).toBeCloseTo(0, 5);
+  });
+
+  it('splices multiple sub-windows from one rendered phrase', () => {
+    const base = makeWav16(new Array(48000).fill(0));
+    const phrase = makeWav16(new Array(4800).fill(0.7));
+    const replaced = splicePhraseWav(
+      base,
+      [
+        { startFrame: 20, endFrame: 21, sourceStartFrame: 2, sourceEndFrame: 3, buffer: phrase },
+        { startFrame: 30, endFrame: 31, sourceStartFrame: 4, sourceEndFrame: 5, buffer: phrase },
+      ],
+      { crossfadeMs: 0 },
+    );
+    const parsed = parseWav(replaced);
+    const sampleAt = (i: number) => replaced.readInt16LE(parsed.dataOffset + i * 2) / 32768;
+    expect(sampleAt(9599)).toBeCloseTo(0, 5);
+    expect(sampleAt(9600)).toBeCloseTo(0.7, 2);
+    expect(sampleAt(10079)).toBeCloseTo(0.7, 2);
+    expect(sampleAt(10080)).toBeCloseTo(0, 5);
+    expect(sampleAt(14399)).toBeCloseTo(0, 5);
+    expect(sampleAt(14400)).toBeCloseTo(0.7, 2);
+  });
+
+  it('limits a short source window without corrupting the base', () => {
+    const base = makeWav16(new Array(48000).fill(0));
+    const phrase = makeWav16(new Array(4800).fill(0.6));
+    const replaced = splicePhraseWav(
+      base,
+      [{ startFrame: 20, endFrame: 30, sourceStartFrame: 9, sourceEndFrame: 10, buffer: phrase }],
+      { crossfadeMs: 0 },
+    );
+    const parsed = parseWav(replaced);
+    const sampleAt = (i: number) => replaced.readInt16LE(parsed.dataOffset + i * 2) / 32768;
+    expect(sampleAt(9600)).toBeCloseTo(0.6, 2);
+    expect(sampleAt(9600 + 479)).toBeCloseTo(0.6, 2);
+    expect(sampleAt(9600 + 480)).toBeCloseTo(0, 5);
+  });
+
+  it('splices full-song timing windows and preserves everything else', () => {
+    const base = makeWav16(new Array(96000).fill(0));
+    const next = makeWav16(new Array(96000).fill(0.5));
+    const replaced = splicePhraseWav(
+      base,
+      [
+        { startFrame: 50, endFrame: 55, sourceStartFrame: 50, sourceEndFrame: 55, buffer: next },
+        { startFrame: 100, endFrame: 105, sourceStartFrame: 100, sourceEndFrame: 105, buffer: next },
+      ],
+      { crossfadeMs: 0 },
+    );
+    const parsed = parseWav(replaced);
+    const sampleAt = (i: number) => replaced.readInt16LE(parsed.dataOffset + i * 2) / 32768;
+    expect(sampleAt(23999)).toBeCloseTo(0, 5);
+    expect(sampleAt(24000)).toBeCloseTo(0.5, 2);
+    expect(sampleAt(26399)).toBeCloseTo(0.5, 2);
+    expect(sampleAt(26400)).toBeCloseTo(0, 5);
+    expect(sampleAt(47999)).toBeCloseTo(0, 5);
+    expect(sampleAt(48000)).toBeCloseTo(0.5, 2);
+    expect(sampleAt(50399)).toBeCloseTo(0.5, 2);
+    expect(sampleAt(50400)).toBeCloseTo(0, 5);
+  });
+
+  it('rejects a phrase WAV with a different format', () => {
+    const base = makeWav16(new Array(4800).fill(0));
+    const phrase = makeWav16(new Array(480).fill(0.5), 44100);
+    expect(() => splicePhraseWav(base, [{ startFrame: 20, endFrame: 21, buffer: phrase }])).toThrow(/format/i);
   });
 
   it('fades the phrase boundaries into the existing take', () => {

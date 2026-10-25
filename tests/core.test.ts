@@ -105,6 +105,23 @@ describe('F0 data', () => {
     });
   });
 
+  it('handles null, unchanged and sub-threshold timing input', () => {
+    const base = parseTimingText('0 10000000 a\n10000000 20000000 b\n20000000 30000000 c\n')!;
+    expect(dirtyTimingWindows(null, base)).toBeNull();
+    expect(dirtyTimingWindows(base, base)).toEqual([]);
+    const tiny = parseTimingText(serializeTiming(updateBoundary(base.phonemes, 1, 1.0001)))!;
+    expect(dirtyTimingWindows(base, tiny)).toEqual([]);
+    expect(dirtyTimingWindows(base, parseTimingText('0 10000000 a\n10000000 30000000 d\n')!)).toBeNull();
+  });
+
+  it('clamps a moved last boundary into a dirty frame window', () => {
+    const base = parseTimingText('0 10000000 a\n10000000 20000000 b\n20000000 30000000 c\n')!;
+    const current = parseTimingText(serializeTiming(updateBoundary(base.phonemes, 2, 2.5)))!;
+    const windows = dirtyTimingWindows(base, current);
+    expect(windows).toHaveLength(1);
+    expect(windows![0]).toMatchObject({ startFrame: 195, endFrame: 255, changedBoundaries: 1 });
+  });
+
   it('merges close timing windows and rejects phoneme structure changes', () => {
     const base = parseTimingText('0 10000000 a\n10000000 20000000 b\n20000000 30000000 c\n')!;
     const moved = updateBoundary(updateBoundary(base.phonemes, 1, 1.1), 2, 1.12);

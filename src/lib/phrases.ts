@@ -22,6 +22,14 @@ function frameChanged(a: number, b: number): boolean {
   return Math.abs(a - b) > Math.max(EPSILON_HZ, Math.max(a, b) * 0.001);
 }
 
+export function f0Changed(previousF0: Float32Array, currentF0: Float32Array): boolean {
+  if (previousF0.length !== currentF0.length) return true;
+  for (let i = 0; i < previousF0.length; i++) {
+    if (frameChanged(previousF0[i], currentF0[i])) return true;
+  }
+  return false;
+}
+
 export function dirtyPhraseRanges(
   phrases: PhraseInfo[],
   previousF0: Float32Array,
