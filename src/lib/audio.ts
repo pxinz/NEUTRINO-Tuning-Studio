@@ -34,6 +34,21 @@ export interface MixOptions {
   dynamicsPoints: DynamicsPoint[];
 }
 
+function bufferRms(buffer: AudioBuffer): number {
+  const channels = Math.min(2, buffer.numberOfChannels);
+  const stride = Math.max(1, Math.floor(buffer.length / 40000));
+  let sum = 0;
+  let count = 0;
+  for (let c = 0; c < channels; c++) {
+    const data = buffer.getChannelData(c);
+    for (let i = 0; i < data.length; i += stride) {
+      sum += data[i] * data[i];
+      count++;
+    }
+  }
+  return count && Number.isFinite(sum) ? Math.sqrt(sum / count) : 0;
+}
+
 export function computePeaks(buffer: AudioBuffer, buckets = 6000): Peaks {
   const length = Math.max(1, Math.min(buckets, buffer.length));
   const min = new Float32Array(length);
@@ -186,6 +201,8 @@ export class AudioEngine {
     const buffer = await ctx.decodeAudioData(data);
     this.vocalBuffer = buffer;
     this.vocalPeaks = computePeaks(buffer);
+    this.guideBuffer = null;
+    this.guideF0Ref = null;
     return buffer;
   }
 
@@ -245,6 +262,10 @@ export class AudioEngine {
     const frames = Math.max(1, Math.ceil(endTime * rate));
     const buffer = ctx.createBuffer(1, frames, rate);
     const data = buffer.getChannelData(0);
+    const vocalRms = this.vocalBuffer ? bufferRms(this.vocalBuffer) : 0;
+    // A sine's RMS is peak / sqrt(2). Match the vocal's RMS so switching
+    // between the two monitor modes does not jump in level.
+    const guidePeak = Math.max(0.08, Math.min(0.5, vocalRms > 0 ? vocalRms * Math.SQRT2 : 0.2));
     let phase = 0;
     let amplitude = 0;
     let frequency = 220;
@@ -257,7 +278,7 @@ export class AudioEngine {
       amplitude += ((voiced ? 1 : 0) - amplitude) * ampCoeff;
       phase += (Math.PI * 2 * frequency) / rate;
       if (phase > Math.PI * 2) phase -= Math.PI * 2;
-      data[i] = Math.sin(phase) * amplitude * 0.16;
+      data[i] = Math.sin(phase) * amplitude * guidePeak;
     }
     this.guideBuffer = buffer;
     this.guideF0Ref = f0;

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AudioWaveform,
+  Check,
   ChevronDown,
   Crosshair,
   Music,
@@ -34,6 +35,31 @@ export default function Transport() {
   const setVocalMode = useAppStore((s) => s.setVocalMode);
   const reference = project.reference;
   const setReference = useAppStore((s) => s.setReference);
+  const [monitorOpen, setMonitorOpen] = useState(false);
+  const monitorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!monitorOpen) return;
+    const close = (e: MouseEvent) => {
+      if (monitorRef.current && !monitorRef.current.contains(e.target as Node)) setMonitorOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMonitorOpen(false);
+    };
+    window.addEventListener('mousedown', close);
+    window.addEventListener('keydown', esc);
+    return () => {
+      window.removeEventListener('mousedown', close);
+      window.removeEventListener('keydown', esc);
+    };
+  }, [monitorOpen]);
+
+  const vocalModes = [
+    { value: 'vocal' as const, label: t('transport.vocal'), icon: <Volume2 size={14} /> },
+    { value: 'sine' as const, label: t('transport.vocalSine'), icon: <AudioWaveform size={14} /> },
+    { value: 'mute' as const, label: t('transport.vocalMute'), icon: <VolumeX size={14} /> },
+  ];
+  const activeMode = vocalModes.find((mode) => mode.value === transport.vocalMode) || vocalModes[0];
 
   const duration =
     timelineEnd(project.score, audio.duration, reference, audio.referenceDuration) ||
@@ -97,26 +123,42 @@ export default function Transport() {
           <Crosshair size={14} />
           <span>{t('transport.follow')}</span>
         </button>
-        <label className="transport-monitor" title={t('transport.vocalMode')}>
-          {transport.vocalMode === 'sine' ? (
-            <AudioWaveform size={14} />
-          ) : transport.vocalMode === 'mute' ? (
-            <VolumeX size={14} />
-          ) : (
-            <Volume2 size={14} />
-          )}
-          <select
-            className="transport-monitor-select"
-            value={transport.vocalMode}
-            onChange={(e) => setVocalMode(e.target.value as typeof transport.vocalMode)}
+        <div className="transport-monitor" ref={monitorRef}>
+          <button
+            type="button"
+            className={clsx('transport-monitor-trigger', monitorOpen && 'open')}
+            onClick={() => setMonitorOpen((open) => !open)}
+            aria-haspopup="listbox"
+            aria-expanded={monitorOpen}
             aria-label={t('transport.vocalMode')}
+            title={t('transport.vocalMode')}
           >
-            <option value="vocal">{t('transport.vocal')}</option>
-            <option value="sine">{t('transport.vocalSine')}</option>
-            <option value="mute">{t('transport.vocalMute')}</option>
-          </select>
-          <ChevronDown size={10} />
-        </label>
+            {activeMode.icon}
+            <span>{activeMode.label}</span>
+            <ChevronDown size={10} className={clsx('monitor-chevron', monitorOpen && 'open')} />
+          </button>
+          {monitorOpen ? (
+            <div className="transport-monitor-menu" role="listbox" aria-label={t('transport.vocalMode')}>
+              {vocalModes.map((mode) => (
+                <button
+                  key={mode.value}
+                  type="button"
+                  role="option"
+                  aria-selected={mode.value === transport.vocalMode}
+                  className={clsx('transport-monitor-item', mode.value === transport.vocalMode && 'active')}
+                  onClick={() => {
+                    setVocalMode(mode.value);
+                    setMonitorOpen(false);
+                  }}
+                >
+                  {mode.icon}
+                  <span>{mode.label}</span>
+                  {mode.value === transport.vocalMode ? <Check size={13} className="monitor-check" /> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
         <button
           type="button"
           className={clsx('transport-toggle', reference && !reference.muted && 'active')}

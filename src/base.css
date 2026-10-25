@@ -532,9 +532,17 @@ kbd { font-family: var(--font-mono); font-size: 9px; padding: 2px 5px; border-ra
 .transport-toggle.active { color: var(--accent); background: var(--accent-soft); }
 .transport-toggle:disabled { opacity: 0.42; cursor: not-allowed; background: transparent; }
 .transport-toggle span { overflow: hidden; text-overflow: ellipsis; }
-.transport-monitor { display: flex; align-items: center; gap: 4px; height: 26px; padding: 0 7px; border-radius: 6px; background: var(--panel-2); color: var(--accent); font-size: 9px; }
-.transport-monitor-select { appearance: none; background: transparent; border: 0; color: inherit; font: inherit; cursor: pointer; outline: none; padding: 0 2px; }
-.transport-monitor-select option { background: var(--panel); color: var(--text-primary); }
+.transport-monitor { position: relative; display: flex; align-items: center; }
+.transport-monitor-trigger { display: flex; align-items: center; gap: 5px; height: 26px; padding: 0 7px; border-radius: 6px; background: var(--panel-2); color: var(--accent); font: inherit; font-size: 9px; cursor: pointer; white-space: nowrap; }
+.transport-monitor-trigger:hover, .transport-monitor-trigger.open { background: var(--panel-3); }
+.transport-monitor-trigger span { pointer-events: none; }
+.monitor-chevron { transition: transform 120ms ease; }
+.monitor-chevron.open { transform: rotate(180deg); }
+.transport-monitor-menu { position: absolute; left: 0; bottom: calc(100% + 7px); min-width: 148px; padding: 4px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--panel); box-shadow: var(--shadow); z-index: 150; animation: menu-in 90ms ease-out; }
+.transport-monitor-item { display: flex; align-items: center; gap: 7px; width: 100%; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--text-secondary); font-size: 10px; text-align: left; }
+.transport-monitor-item:hover { background: var(--panel-2); color: var(--text-primary); }
+.transport-monitor-item.active { color: var(--accent); background: var(--accent-soft); }
+.monitor-check { margin-left: auto; color: var(--accent); }
 .master-volume { display: flex; align-items: center; gap: 5px; color: var(--text-muted); width: 138px; flex: none; }
 .master-volume .slider { flex: 1; }
 .master-volume span { font-family: var(--font-mono); font-size: 8px; width: 22px; text-align: right; }

@@ -48,7 +48,8 @@ Date of verification: 2026-10-24 · build 1.1.3
 | Phrase unit tests | PASS — phrase parser, dirty phrase detection, PCM16 splice/crossfade, project phrase persistence (5 tests) |
 | Reference timeline | PASS — 30 s reference extended transport to 0:30; offset -2 produced 0:28; playback from 0:27.7 stopped at the reference end |
 | Reference-only playback | PASS — a loaded reference played without a rendered vocal (0:01.18 after 1.2 s) |
-| Vocal monitor | PASS — combobox offers 人声 / 正弦波 / 静音; sine mode plays, mute and vocal modes switch live |
+| Vocal monitor | PASS — custom in-app menu offers 人声 / 正弦波 / 静音 with icons and a selected check; sine mode plays, mute and vocal modes switch live |
+| Monitor level matching | PASS — sine-wave guide level is derived from the rendered vocal RMS (equal-RMS target) instead of a fixed amplitude |
 | Empty-state render action | PASS — clicked 渲染人声 inside the timing overlay; full render started and the overlay was replaced by timing data |
 | Empty-state wording | PASS — timing/pitch/dynamics prompts all use the same “请先渲染人声” wording and 渲染人声 button |
 | Empty piano roll | PASS — with the empty-state overlay visible, a pencil click on the grid added a note; overlay no longer blocks blank grid areas |
