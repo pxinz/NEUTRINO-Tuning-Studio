@@ -8,6 +8,7 @@ import {
   FilePlus2,
   FolderOpen,
   Gauge,
+  History,
   Languages,
   Moon,
   Music2,
@@ -51,6 +52,7 @@ export default function TopBar() {
   const setProjectName = useAppStore((s) => s.setProjectName);
   const newProject = useAppStore((s) => s.newProject);
   const openProjectDialog = useAppStore((s) => s.openProjectDialog);
+  const openProjectPath = useAppStore((s) => s.openProjectPath);
   const saveProject = useAppStore((s) => s.saveProject);
   const importMusicXmlDialog = useAppStore((s) => s.importMusicXmlDialog);
   const importMidiDialog = useAppStore((s) => s.importMidiDialog);
@@ -84,9 +86,24 @@ export default function TopBar() {
   const renderBusy = render.status === 'running';
   const canRender = Boolean(neutrino?.ok) && project.score.notes.length > 0;
 
+  const recentItems: MenuItem[] = (settings?.recentProjects || []).slice(0, 5).map((path) => {
+    const name = path.replace(/\\/g, '/').split('/').pop() || path;
+    return {
+      label: name.replace(/\.(ntstudio|json)$/i, ''),
+      icon: <History size={15} />,
+      onClick: () => void openProjectPath(path),
+    };
+  });
   const fileItems: MenuItem[] = [
     { label: t('topbar.new'), icon: <FilePlus2 size={15} />, onClick: () => void newProject(), shortcut: 'Ctrl+N' },
     { label: t('topbar.open'), icon: <FolderOpen size={15} />, onClick: () => void openProjectDialog(), shortcut: 'Ctrl+O' },
+    ...(recentItems.length
+      ? [
+          { separator: true as const },
+          { label: t('topbar.recent'), icon: <History size={15} />, disabled: true },
+          ...recentItems,
+        ]
+      : []),
     { separator: true },
     { label: t('topbar.save'), icon: <Save size={15} />, onClick: () => void saveProject(), shortcut: 'Ctrl+S' },
     { label: t('common.saveAs'), icon: <Save size={15} />, onClick: () => void saveProject(true), shortcut: 'Ctrl+Shift+S' },

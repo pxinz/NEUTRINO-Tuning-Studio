@@ -51,6 +51,10 @@ Date of verification: 2026-10-24 · build 1.1.3
 | Vocal monitor | PASS — combobox offers 人声 / 正弦波 / 静音; sine mode plays, mute and vocal modes switch live |
 | Empty-state render action | PASS — clicked 渲染人声 inside the timing overlay; full render started and the overlay was replaced by timing data |
 | Empty-state wording | PASS — timing/pitch/dynamics prompts all use the same “请先渲染人声” wording and 渲染人声 button |
+| Empty piano roll | PASS — with the empty-state overlay visible, a pencil click on the grid added a note; overlay no longer blocks blank grid areas |
+| Persistent monitor controls | PASS — vocal monitor and reference buttons are always present; reference is disabled until a reference is loaded |
+| Unsaved project prompt | PASS — New/Open and recent-file open show Cancel / Discard changes / Save and continue; discard proceeds without saving |
+| Recent project history | PASS — saving/opening updates the File > Recent projects list and reopening restores the project |
 | Playback UI performance | PASS — automated 3 s playback produced no `longtask` entries over 50 ms |
 | Reference/playback unit tests | PASS — positive/negative reference endings and fallback durations (3 tests) |
 

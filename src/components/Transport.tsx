@@ -97,39 +97,36 @@ export default function Transport() {
           <Crosshair size={14} />
           <span>{t('transport.follow')}</span>
         </button>
-        {audio.loaded ? (
-          <label className="transport-monitor" title={t('transport.vocalMode')}>
-            {transport.vocalMode === 'sine' ? (
-              <AudioWaveform size={14} />
-            ) : transport.vocalMode === 'mute' ? (
-              <VolumeX size={14} />
-            ) : (
-              <Volume2 size={14} />
-            )}
-            <select
-              className="transport-monitor-select"
-              value={transport.vocalMode}
-              onChange={(e) => setVocalMode(e.target.value as typeof transport.vocalMode)}
-              aria-label={t('transport.vocalMode')}
-            >
-              <option value="vocal">{t('transport.vocal')}</option>
-              <option value="sine">{t('transport.vocalSine')}</option>
-              <option value="mute">{t('transport.vocalMute')}</option>
-            </select>
-            <ChevronDown size={10} />
-          </label>
-        ) : null}
-        {reference ? (
-          <button
-            type="button"
-            className={clsx('transport-toggle', !reference.muted && 'active')}
-            onClick={() => setReference({ muted: !reference.muted })}
-            title={reference.muted ? t('reference.unmute') : t('reference.mute')}
+        <label className="transport-monitor" title={t('transport.vocalMode')}>
+          {transport.vocalMode === 'sine' ? (
+            <AudioWaveform size={14} />
+          ) : transport.vocalMode === 'mute' ? (
+            <VolumeX size={14} />
+          ) : (
+            <Volume2 size={14} />
+          )}
+          <select
+            className="transport-monitor-select"
+            value={transport.vocalMode}
+            onChange={(e) => setVocalMode(e.target.value as typeof transport.vocalMode)}
+            aria-label={t('transport.vocalMode')}
           >
-            {reference.muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            <span>{t('transport.reference')}</span>
-          </button>
-        ) : null}
+            <option value="vocal">{t('transport.vocal')}</option>
+            <option value="sine">{t('transport.vocalSine')}</option>
+            <option value="mute">{t('transport.vocalMute')}</option>
+          </select>
+          <ChevronDown size={10} />
+        </label>
+        <button
+          type="button"
+          className={clsx('transport-toggle', reference && !reference.muted && 'active')}
+          onClick={() => reference && setReference({ muted: !reference.muted })}
+          disabled={!reference}
+          title={reference ? (reference.muted ? t('reference.unmute') : t('reference.mute')) : t('reference.none')}
+        >
+          {reference && !reference.muted ? <Volume2 size={14} /> : <VolumeX size={14} />}
+          <span>{t('transport.reference')}</span>
+        </button>
       </div>
 
       <div className="master-volume">

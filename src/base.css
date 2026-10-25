@@ -386,7 +386,8 @@ kbd { font-family: var(--font-mono); font-size: 9px; padding: 2px 5px; border-ra
 .note-breath { font-size: 15px; font-weight: 800; opacity: 0.55; line-height: 1; margin-left: auto; }
 .note-resize { position: absolute; top: 0; right: 0; width: 6px; height: 100%; cursor: ew-resize; }
 .marquee { position: absolute; border: 1px solid var(--accent); background: var(--accent-soft); pointer-events: none; z-index: 5; }
-.empty-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--bg) 48%, transparent); color: var(--text-muted); z-index: 4; text-align: center; padding: 20px; backdrop-filter: blur(1px); }
+.empty-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--bg) 48%, transparent); color: var(--text-muted); z-index: 4; text-align: center; padding: 20px; backdrop-filter: blur(1px); pointer-events: none; }
+.empty-overlay-actions, .empty-overlay button, .empty-overlay a, .empty-overlay input, .empty-overlay select { pointer-events: auto; }
 .empty-overlay strong { font-size: 12px; font-weight: 500; max-width: 420px; color: var(--text-secondary); line-height: 1.5; }
 .empty-overlay.compact { gap: 9px; }
 .empty-overlay-actions { display: flex; gap: 6px; margin-top: 2px; }
@@ -529,6 +530,7 @@ kbd { font-family: var(--font-mono); font-size: 9px; padding: 2px 5px; border-ra
 .transport-toggle { display: flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; border-radius: 6px; color: var(--text-muted); font-size: 9px; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .transport-toggle:hover { background: var(--panel-2); color: var(--text-secondary); }
 .transport-toggle.active { color: var(--accent); background: var(--accent-soft); }
+.transport-toggle:disabled { opacity: 0.42; cursor: not-allowed; background: transparent; }
 .transport-toggle span { overflow: hidden; text-overflow: ellipsis; }
 .transport-monitor { display: flex; align-items: center; gap: 4px; height: 26px; padding: 0 7px; border-radius: 6px; background: var(--panel-2); color: var(--accent); font-size: 9px; }
 .transport-monitor-select { appearance: none; background: transparent; border: 0; color: inherit; font: inherit; cursor: pointer; outline: none; padding: 0 2px; }

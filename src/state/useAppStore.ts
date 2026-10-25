@@ -86,7 +86,7 @@ import {
   uid,
 } from '../lib/time';
 
-type Modal = 'settings' | 'help' | 'about' | 'project' | 'lyrics' | 'close' | null;
+type Modal = 'settings' | 'help' | 'about' | 'project' | 'lyrics' | 'close' | 'discard' | null;
 
 interface Viewport {
   pxPerSec: number;
@@ -137,6 +137,7 @@ export interface AppState {
   lastSavedAt: number | null;
   welcomeOpen: boolean;
   modal: Modal;
+  pendingDiscardAction: (() => void | Promise<void>) | null;
   logOpen: boolean;
   exporting: boolean;
   toasts: Toast[];
@@ -181,13 +182,14 @@ export interface AppState {
   pushToast(kind: Toast['kind'], message: string): void;
   dismissToast(id: number): void;
 
-  newProject(): Promise<void>;
-  openDemo(): Promise<void>;
-  openProjectDialog(): Promise<void>;
-  openProjectPath(path: string): Promise<void>;
+  newProject(skipConfirm?: boolean): Promise<void>;
+  openDemo(skipConfirm?: boolean): Promise<void>;
+  openProjectDialog(skipConfirm?: boolean): Promise<void>;
+  openProjectPath(path: string, skipConfirm?: boolean): Promise<void>;
   saveProject(saveAs?: boolean, silent?: boolean): Promise<boolean>;
-  importMusicXmlDialog(): Promise<void>;
-  importMidiDialog(): Promise<void>;
+  resolveDiscard(choice: 'save' | 'discard' | 'cancel'): Promise<void>;
+  importMusicXmlDialog(skipConfirm?: boolean): Promise<void>;
+  importMidiDialog(skipConfirm?: boolean): Promise<void>;
   loadMusicXmlPath(path: string): Promise<void>;
   loadMidiPath(path: string): Promise<void>;
   exportMusicXmlFile(): Promise<void>;
@@ -332,11 +334,6 @@ function snapshotOf(state: AppState, label: string): HistorySnapshot {
     reference: state.project.reference ? { ...state.project.reference } : null,
     label,
   };
-}
-
-function confirmDiscard(dirty: boolean): boolean {
-  if (!dirty) return true;
-  return window.confirm(i18n.t('project.unsavedMessage'));
 }
 
 function fileBaseName(p: string): string {
@@ -592,6 +589,7 @@ export const useAppStore = create<AppState>((set, get) => {
     lastSavedAt: null,
     welcomeOpen: true,
     modal: null,
+    pendingDiscardAction: null,
     logOpen: false,
     exporting: false,
     toasts: [],
@@ -799,8 +797,11 @@ export const useAppStore = create<AppState>((set, get) => {
       set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
     },
 
-    async newProject() {
-      if (!confirmDiscard(get().dirty)) return;
+    async newProject(skipConfirm = false) {
+      if (!skipConfirm && get().dirty) {
+        set({ modal: 'discard', pendingDiscardAction: () => get().newProject(true) });
+        return;
+      }
       const settings = get().settings;
       const models = get().models;
       const model =
@@ -816,8 +817,11 @@ export const useAppStore = create<AppState>((set, get) => {
       get().pushToast('info', i18n.t('notifications.projectCreated'));
     },
 
-    async openDemo() {
-      if (!confirmDiscard(get().dirty)) return;
+    async openDemo(skipConfirm = false) {
+      if (!skipConfirm && get().dirty) {
+        set({ modal: 'discard', pendingDiscardAction: () => get().openDemo(true) });
+        return;
+      }
       const settings = get().settings;
       const models = get().models;
       const model =
@@ -831,16 +835,23 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ dirty: false });
     },
 
-    async openProjectDialog() {
-      if (!confirmDiscard(get().dirty)) return;
+    async openProjectDialog(skipConfirm = false) {
+      if (!skipConfirm && get().dirty) {
+        set({ modal: 'discard', pendingDiscardAction: () => get().openProjectDialog(true) });
+        return;
+      }
       const paths = await window.api.openDialog({
         title: i18n.t('project.open'),
         filters: [{ name: 'NEUTRINO Tuning Studio', extensions: ['ntstudio', 'json'] }],
       });
-      if (paths[0]) await get().openProjectPath(paths[0]);
+      if (paths[0]) await get().openProjectPath(paths[0], true);
     },
 
-    async openProjectPath(path) {
+    async openProjectPath(path, skipConfirm = false) {
+      if (!skipConfirm && get().dirty) {
+        set({ modal: 'discard', pendingDiscardAction: () => get().openProjectPath(path, true) });
+        return;
+      }
       try {
         const text = await window.api.readProject(path);
         const decoded = decodeProject(text);
@@ -891,7 +902,8 @@ export const useAppStore = create<AppState>((set, get) => {
           },
         }));
         get().fitPitchRange();
-        await window.api.addRecentProject(path);
+        const nextSettings = await window.api.addRecentProject(path);
+        set({ settings: nextSettings });
         void window.api.setTitle(`${project.name} — NEUTRINO Tuning Studio`);
         if (project.render?.wavPath) {
           const exists = await window.api.exists(project.render.wavPath);
@@ -934,8 +946,9 @@ export const useAppStore = create<AppState>((set, get) => {
           state.pitchEdited,
         );
         await window.api.writeProject(path, data);
-        await window.api.addRecentProject(path);
+        const nextSettings = await window.api.addRecentProject(path);
         set((s) => ({
+          settings: nextSettings,
           project: { ...s.project, updatedAt: project.updatedAt },
           projectPath: path,
           dirty: false,
@@ -950,8 +963,25 @@ export const useAppStore = create<AppState>((set, get) => {
       }
     },
 
-    async importMusicXmlDialog() {
-      if (!confirmDiscard(get().dirty)) return;
+    async resolveDiscard(choice) {
+      const action = get().pendingDiscardAction;
+      if (choice === 'cancel') {
+        set({ modal: null, pendingDiscardAction: null });
+        return;
+      }
+      if (choice === 'save') {
+        const saved = await get().saveProject();
+        if (!saved) return;
+      }
+      set({ modal: null, pendingDiscardAction: null });
+      await action?.();
+    },
+
+    async importMusicXmlDialog(skipConfirm = false) {
+      if (!skipConfirm && get().dirty) {
+        set({ modal: 'discard', pendingDiscardAction: () => get().importMusicXmlDialog(true) });
+        return;
+      }
       const paths = await window.api.openDialog({
         title: i18n.t('project.importMusicXml'),
         filters: [
@@ -962,8 +992,11 @@ export const useAppStore = create<AppState>((set, get) => {
       if (paths[0]) await get().loadMusicXmlPath(paths[0]);
     },
 
-    async importMidiDialog() {
-      if (!confirmDiscard(get().dirty)) return;
+    async importMidiDialog(skipConfirm = false) {
+      if (!skipConfirm && get().dirty) {
+        set({ modal: 'discard', pendingDiscardAction: () => get().importMidiDialog(true) });
+        return;
+      }
       const paths = await window.api.openDialog({
         title: i18n.t('project.importMidi'),
         filters: [{ name: 'MIDI', extensions: ['mid', 'midi'] }],

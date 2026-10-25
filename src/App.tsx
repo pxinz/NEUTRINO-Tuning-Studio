@@ -14,6 +14,7 @@ import AboutModal from './components/AboutModal';
 import ProjectModal from './components/ProjectModal';
 import LyricsModal from './components/LyricsModal';
 import CloseConfirmModal from './components/CloseConfirmModal';
+import DiscardConfirmModal from './components/DiscardConfirmModal';
 import ToastStack from './components/ToastStack';
 
 export default function App() {
@@ -249,6 +250,7 @@ export default function App() {
       <ProjectModal />
       <LyricsModal />
       <CloseConfirmModal />
+      <DiscardConfirmModal />
       <ToastStack />
       {booting ? (
         <div className="booting-overlay">

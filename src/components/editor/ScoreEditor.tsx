@@ -639,7 +639,7 @@ export default function ScoreEditor() {
                 }}
               />
             ) : null}
-            {!score.notes.length ? (
+            {!score.notes.length && tool !== 'pencil' ? (
               <div className="empty-overlay" onPointerDown={(e) => e.stopPropagation()}>
                 <Music2 size={30} />
                 <strong>{t('score.noNotes')}</strong>
