@@ -1,13 +1,16 @@
 name: macOS build
 
 # Native macOS packaging is the reliable way to produce a Mac build.
-# This workflow intentionally produces an unsigned (ad-hoc) artifact; for
-# distribution, add Apple Developer ID signing + notarization secrets.
+# This workflow intentionally produces an unsigned artifact; for distribution,
+# add Apple Developer ID signing + notarization secrets.
 on:
   workflow_dispatch:
   push:
     tags:
       - 'v*'
+
+permissions:
+  contents: read
 
 jobs:
   macos:
@@ -23,7 +26,7 @@ jobs:
       - name: Package macOS arm64
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: npx electron-builder --mac dmg zip --arm64
+        run: npx electron-builder --mac dmg zip --arm64 --publish never
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
