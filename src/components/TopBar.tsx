@@ -29,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { useAppStore } from '../state/useAppStore';
 import { Button, Dropdown, IconButton, MenuItem } from './ui';
+import { SHORTCUT_DEFAULTS, formatShortcut } from '../lib/shortcuts';
 import type { EditorTab, Language, Theme } from '../lib/types';
 
 const TABS: Array<{ id: EditorTab; icon: React.ReactNode; key: string }> = [
@@ -47,6 +48,7 @@ export default function TopBar() {
   const neutrino = useAppStore((s) => s.neutrino);
   const render = useAppStore((s) => s.render);
   const settings = useAppStore((s) => s.settings);
+  const appInfo = useAppStore((s) => s.appInfo);
   const language = useAppStore((s) => s.language);
   const theme = useAppStore((s) => s.theme);
   const setTab = useAppStore((s) => s.setTab);
@@ -71,6 +73,11 @@ export default function TopBar() {
   const setModal = useAppStore((s) => s.setModal);
   const toggleLog = useAppStore((s) => s.toggleLog);
   const logOpen = useAppStore((s) => s.logOpen);
+  const isMac = appInfo?.platform === 'darwin';
+  const renderShortcut = formatShortcut(
+    settings?.shortcuts?.render || SHORTCUT_DEFAULTS.render,
+    isMac,
+  );
 
   const [nameDraft, setNameDraft] = useState(project.name);
   const nameFocused = useRef(false);
@@ -252,11 +259,11 @@ export default function TopBar() {
             className="render-btn"
             onClick={() => void renderVocal()}
             disabled={!canRender}
-            title={!neutrino?.ok ? t('render.needEngine') : !canRender ? t('render.needScore') : t('render.shortcut')}
+            title={!neutrino?.ok ? t('render.needEngine') : !canRender ? t('render.needScore') : t('render.shortcut', { shortcut: renderShortcut })}
           >
             <Sparkles size={16} />
             <span>{project.render ? t('topbar.rerender') : t('topbar.render')}</span>
-            <kbd>Ctrl ↵</kbd>
+            <kbd>{renderShortcut}</kbd>
           </button>
         )}
       </div>

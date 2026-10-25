@@ -69,12 +69,12 @@ export default function ShortcutSettings({
       {duplicates.size ? <div className="shortcut-warning">{t('settings.shortcutDuplicate')}</div> : null}
       <div className="shortcut-list">
         {SHORTCUT_ACTIONS.map((action) => (
-          <div key={action} className={duplicates.has(action) ? 'shortcut-row conflict' : 'shortcut-row'}>
-            <span className="shortcut-label">{t(labelKeyFor(action))}</span>
+          <div key={action} className={duplicates.has(action) ? 'shortcut-setting-row conflict' : 'shortcut-setting-row'}>
+            <span className="shortcut-setting-label">{t(labelKeyFor(action))}</span>
             <button
               type="button"
               data-shortcut-recorder="true"
-              className={recording === action ? 'shortcut-capture recording' : 'shortcut-capture'}
+              className={recording === action ? 'shortcut-setting-capture recording' : 'shortcut-setting-capture'}
               onClick={() => setRecording(recording === action ? null : action)}
               onKeyDown={(event) => record(action, event)}
               onBlur={() => {
@@ -89,7 +89,7 @@ export default function ShortcutSettings({
       </div>
       <button
         type="button"
-        className="shortcut-reset"
+        className="shortcut-setting-reset"
         onClick={() => {
           onChange({ ...SHORTCUT_DEFAULTS });
           setRecording(null);

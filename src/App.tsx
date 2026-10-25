@@ -198,7 +198,6 @@ export default function App() {
         'saveProject',
         'saveAs',
         'render',
-        'settings',
       ]);
       if (action && (!editing || allowedWhileEditing.has(action))) {
         e.preventDefault();
@@ -209,6 +208,15 @@ export default function App() {
             break;
           case 'stop':
             s.stop();
+            break;
+          case 'toolSelect':
+            s.setTool('select');
+            break;
+          case 'toolPencil':
+            s.setTool('pencil');
+            break;
+          case 'toolEraser':
+            s.setTool('eraser');
             break;
           case 'render':
             void s.renderVocal();
@@ -251,9 +259,6 @@ export default function App() {
             break;
           case 'toggleLog':
             s.toggleLog();
-            break;
-          case 'settings':
-            s.setModal('settings');
             break;
         }
         return;

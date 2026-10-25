@@ -3,22 +3,23 @@ import { useTranslation } from 'react-i18next';
 import { BookOpen, ExternalLink, Keyboard, Sparkles } from 'lucide-react';
 import { useAppStore } from '../state/useAppStore';
 import { Modal, Button } from './ui';
-
-const SHORTCUTS: Array<[string, string]> = [
-  ['help.shortcut.space', 'Space'],
-  ['help.shortcut.render', 'Ctrl + Enter'],
-  ['help.shortcut.save', 'Ctrl + S'],
-  ['help.shortcut.undo', 'Ctrl + Z'],
-  ['help.shortcut.redo', 'Ctrl + Shift + Z'],
-  ['help.shortcut.delete', 'Delete / Backspace'],
-  ['help.shortcut.tabs', 'Ctrl + 1…4'],
-  ['help.shortcut.zoom', 'Ctrl + Wheel'],
-];
+import {
+  SHORTCUT_ACTIONS,
+  SHORTCUT_DEFAULTS,
+  formatShortcut,
+  labelKeyFor,
+} from '../lib/shortcuts';
 
 export default function HelpModal() {
   const { t } = useTranslation();
   const open = useAppStore((s) => s.modal === 'help');
   const setModal = useAppStore((s) => s.setModal);
+  const settings = useAppStore((s) => s.settings);
+  const appInfo = useAppStore((s) => s.appInfo);
+  const bindings = { ...SHORTCUT_DEFAULTS, ...(settings?.shortcuts || {}) };
+  const isMac = appInfo?.platform === 'darwin';
+  const shortcuts = SHORTCUT_ACTIONS.filter((action) => bindings[action]);
+
   return (
     <Modal
       open={open}
@@ -46,10 +47,10 @@ export default function HelpModal() {
         <div className="help-shortcuts">
           <h3><Keyboard size={15} /> {t('help.shortcuts')}</h3>
           <div className="shortcut-grid">
-            {SHORTCUTS.map(([key, value]) => (
-              <div key={key} className="shortcut-row">
-                <span>{t(key)}</span>
-                <kbd>{value}</kbd>
+            {shortcuts.map((action) => (
+              <div key={action} className="shortcut-row">
+                <span>{t(labelKeyFor(action))}</span>
+                <kbd>{formatShortcut(bindings[action], isMac)}</kbd>
               </div>
             ))}
           </div>

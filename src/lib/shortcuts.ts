@@ -3,6 +3,9 @@ import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 export type ShortcutAction =
   | 'playPause'
   | 'stop'
+  | 'toolSelect'
+  | 'toolPencil'
+  | 'toolEraser'
   | 'render'
   | 'newProject'
   | 'openProject'
@@ -16,14 +19,16 @@ export type ShortcutAction =
   | 'tabTiming'
   | 'tabPitch'
   | 'tabDynamics'
-  | 'toggleLog'
-  | 'settings';
+  | 'toggleLog';
 
 export type ShortcutMap = Record<ShortcutAction, string>;
 
 export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   'playPause',
   'stop',
+  'toolSelect',
+  'toolPencil',
+  'toolEraser',
   'render',
   'newProject',
   'openProject',
@@ -38,12 +43,14 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   'tabPitch',
   'tabDynamics',
   'toggleLog',
-  'settings',
 ];
 
 export const SHORTCUT_DEFAULTS: ShortcutMap = {
   playPause: 'Space',
   stop: 'Shift+Space',
+  toolSelect: 'V',
+  toolPencil: 'B',
+  toolEraser: 'E',
   render: 'Mod+Enter',
   newProject: 'Mod+N',
   openProject: 'Mod+O',
@@ -58,7 +65,6 @@ export const SHORTCUT_DEFAULTS: ShortcutMap = {
   tabPitch: 'Mod+3',
   tabDynamics: 'Mod+4',
   toggleLog: 'Mod+L',
-  settings: 'Mod+,',
 };
 
 const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta']);
@@ -103,7 +109,7 @@ export function formatShortcut(binding: string, isMac: boolean): string {
       if (part === 'Mod') return isMac ? '⌘' : 'Ctrl';
       if (part === 'Alt') return isMac ? '⌥' : 'Alt';
       if (part === 'Shift') return isMac ? '⇧' : 'Shift';
-      if (part === 'Enter') return '↵';
+      if (part === 'Enter') return 'Enter';
       if (part === 'Space') return 'Space';
       return part;
     })

@@ -25,6 +25,9 @@ const DEFAULT_SETTINGS = {
   shortcuts: {
     playPause: 'Space',
     stop: 'Shift+Space',
+    toolSelect: 'V',
+    toolPencil: 'B',
+    toolEraser: 'E',
     render: 'Mod+Enter',
     newProject: 'Mod+N',
     openProject: 'Mod+O',
@@ -39,7 +42,6 @@ const DEFAULT_SETTINGS = {
     tabPitch: 'Mod+3',
     tabDynamics: 'Mod+4',
     toggleLog: 'Mod+L',
-    settings: 'Mod+,',
   },
 };
 

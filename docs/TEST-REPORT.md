@@ -38,7 +38,7 @@ Date of verification: 2026-10-24 · build 1.1.3
 | Packaged Windows app (unpacked) | PASS — launched via Playwright with a fresh user data directory |
 | Packaged Windows 1.1.3 real render | PASS — detected engine/models, rendered the demo, 21.6 s audio, no leading bar |
 | Installer/portable artifacts | PASS — NSIS and portable EXE produced; associated 32 px icon verified |
-| Unit tests | PASS — 21 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics, phrase parsing/splicing, project phrase persistence, native macOS runner/search paths, reference timeline) |
+| Unit tests | PASS — 25 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics, phrase parsing/splicing, project phrase persistence, native macOS runner/search paths, reference timeline, shortcut matching/formatting) |
 | Playback alignment | PASS — rendered demo first voiced frame 0.01 s; timing starts `0 100000 pau`; no one-bar lead |
 | Light-mode render progress | PASS — running percentage computed color `rgb(15,23,42)` on `rgb(238,243,250)` |
 | Pencil drag | PASS — drag creates one note with extended duration |
@@ -57,7 +57,9 @@ Date of verification: 2026-10-24 · build 1.1.3
 | Unsaved project prompt | PASS — New/Open and recent-file open show Cancel / Discard changes / Save and continue; discard proceeds without saving |
 | Recent project history | PASS — saving/opening updates the File > Recent projects list and reopening restores the project |
 | Theme follow-system icon | PASS — selecting “follow system” shows a monitor icon instead of the moon |
-| Configurable shortcuts | PASS — Ctrl+, opened settings; recorded Alt+K for loop, saved, and Alt+K toggled loop; duplicate check and reset available |
+| Configurable shortcuts | PASS — settings opened from toolbar; recorded Alt+K for loop and B for pencil, saved, both took effect; duplicate check and reset available |
+| Shortcut settings layout | PASS — dedicated list classes, 12 px horizontal row padding and right-aligned capture buttons avoid the Help styles |
+| Help shortcut guide | PASS — generated from current bindings; includes tools, omits the removed settings action, and shows render as Ctrl+Enter |
 | Playback UI performance | PASS — automated 3 s playback produced no `longtask` entries over 50 ms |
 | Reference/playback unit tests | PASS — positive/negative reference endings and fallback durations (3 tests) |
 
