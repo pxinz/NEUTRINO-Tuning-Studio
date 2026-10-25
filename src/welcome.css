@@ -56,22 +56,18 @@
   width: 100%;
   margin: 0 auto;
 }
-.welcome-brand {
+.welcome-wordmark {
   display: flex;
-  align-items: center;
-  gap: 11px;
-}
-.welcome-brand.welcome-wordmark {
   flex-direction: column;
   align-items: flex-start;
   gap: 0;
 }
-.welcome-brand strong {
+.welcome-wordmark strong {
   font-size: 13px;
   letter-spacing: 0.18em;
   color: var(--text-primary);
 }
-.welcome-brand span {
+.welcome-wordmark span {
   font-size: 9px;
   letter-spacing: 0.1em;
   color: var(--text-muted);
@@ -1076,7 +1072,7 @@
   }
 }
 @media (max-width: 1260px) {
-  .brand-text {
+  .app-identity-text {
     display: none;
   }
   .topbar-actions-left .btn span {

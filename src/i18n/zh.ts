@@ -304,7 +304,7 @@ export const zh: Record<string, string> = {
   'settings.runnerNative': '原生',
   'settings.runnerWine': 'Wine（Windows 版）',
   'settings.wine': 'Wine 命令',
-  'settings.wineHint': '在 Linux/macOS 上运行 Windows 版 NEUTRINO 时使用。',
+  'settings.wineHint': '在 Linux 上运行 Windows 版 NEUTRINO 时使用。',
   'settings.models': '检测到的声库',
   'settings.version': '引擎版本',
   'settings.audio.sampleRate': '输出采样率',

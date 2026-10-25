@@ -1,4 +1,4 @@
-# Brand assets
+# Icon artwork
 
 These source crops are used for the **application icon only**. The artwork was
 created by the project author and is released under the **MIT license**; it is not
@@ -12,8 +12,7 @@ project's MIT license. See https://hyperos.mi.com/font/en/faq/.
 | --- | --- |
 | `ts-for-neutrino.png` | original artwork (retained for provenance) |
 | `ts-for-neutrino-mark.png` | alpha-trimmed square full lockup |
-| `ts-mark.png` | “TS for” compact crop |
-| `ts-only.png` | “TS” mark for 16–48 px icons |
+| `ts-only.png` | “TS” mark for small icons |
 
 Regenerate all platform icons with:
 
@@ -21,6 +20,6 @@ Regenerate all platform icons with:
 npm run icon
 ```
 
-The generator uses nearest-neighbor scaling and responsive source selection:
-TS-only for 16/24/32/48 px, “TS for” for 64 px, and the full lockup for 128 px and
-larger.
+The generator uses nearest-neighbor scaling and:
+- TS-only artwork at 16–64 px;
+- the full lockup at 128 px and above.

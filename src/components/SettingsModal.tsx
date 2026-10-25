@@ -44,6 +44,9 @@ export default function SettingsModal() {
 
   if (!open || !draft) return null;
 
+  const showWine = appInfo?.platform === 'linux';
+  const effectiveRunner: Settings['runner'] = showWine ? draft.runner : 'native';
+
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     setDraft((d) => (d ? { ...d, [key]: value } : d));
   };
@@ -52,14 +55,14 @@ export default function SettingsModal() {
     const dir = await window.api.directoryDialog({ title: t('settings.engineRoot'), defaultPath: draft.neutrinoRoot || undefined });
     if (dir) {
       set('neutrinoRoot', dir);
-      await refreshEngine({ root: dir, runner: draft.runner, wineCommand: draft.wineCommand });
+      await refreshEngine({ root: dir, runner: effectiveRunner, wineCommand: draft.wineCommand });
       const next = useAppStore.getState().settings;
       if (next) setDraft((d) => (d ? { ...d, neutrinoRoot: next.neutrinoRoot } : d));
     }
   };
 
   const detect = async () => {
-    await refreshEngine({ root: draft.neutrinoRoot, runner: draft.runner, wineCommand: draft.wineCommand });
+    await refreshEngine({ root: draft.neutrinoRoot, runner: effectiveRunner, wineCommand: draft.wineCommand });
     const next = useAppStore.getState().settings;
     if (next) setDraft((d) => (d ? { ...d, neutrinoRoot: next.neutrinoRoot } : d));
   };
@@ -71,7 +74,7 @@ export default function SettingsModal() {
         language: draft.language,
         theme: draft.theme,
         neutrinoRoot: draft.neutrinoRoot,
-        runner: draft.runner,
+        runner: effectiveRunner,
         wineCommand: draft.wineCommand,
         threads: draft.threads,
         sampleRate: draft.sampleRate,
@@ -82,7 +85,7 @@ export default function SettingsModal() {
         scrollWheelMode: draft.scrollWheelMode,
       });
       if (draft.neutrinoRoot && draft.neutrinoRoot !== neutrino?.root) {
-        await refreshEngine({ root: draft.neutrinoRoot, runner: draft.runner, wineCommand: draft.wineCommand, silent: true });
+        await refreshEngine({ root: draft.neutrinoRoot, runner: effectiveRunner, wineCommand: draft.wineCommand, silent: true });
       }
       pushToast('success', t('settings.saved'));
       setModal(null);
@@ -178,15 +181,17 @@ export default function SettingsModal() {
               </Field>
               <div className="settings-grid-2">
                 <Field label={t('settings.runner')}>
-                  <select className="select" value={draft.runner} onChange={(e) => set('runner', e.target.value as Settings['runner'])}>
+                  <select className="select" value={effectiveRunner} onChange={(e) => set('runner', e.target.value as Settings['runner'])}>
                     <option value="auto">{t('settings.runnerAuto')}</option>
                     <option value="native">{t('settings.runnerNative')}</option>
-                    <option value="wine">{t('settings.runnerWine')}</option>
+                    {showWine ? <option value="wine">{t('settings.runnerWine')}</option> : null}
                   </select>
                 </Field>
-                <Field label={t('settings.wine')} hint={t('settings.wineHint')}>
-                  <input className="text-input mono" value={draft.wineCommand} onChange={(e) => set('wineCommand', e.target.value)} />
-                </Field>
+                {showWine ? (
+                  <Field label={t('settings.wine')} hint={t('settings.wineHint')}>
+                    <input className="text-input mono" value={draft.wineCommand} onChange={(e) => set('wineCommand', e.target.value)} />
+                  </Field>
+                ) : null}
               </div>
               <Field label={t('settings.models')}>
                 <div className="settings-model-list">

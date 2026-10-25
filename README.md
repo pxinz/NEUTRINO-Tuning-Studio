@@ -53,7 +53,7 @@ npm install
 npm run dev        # Vite + Electron 开发模式
 npm run build      # 类型检查 + 渲染进程构建
 npm test           # Vitest 单元测试
-npm run icon       # 从品牌素材重新生成 PNG/ICO/各尺寸图标
+npm run icon       # 从图标素材重新生成 PNG/ICO/ICNS/各尺寸图标
 npm run dist:win   # Windows 安装包
 npm run dist:linux # Linux AppImage/deb
 npm run dist:mac   # macOS dmg（需在 macOS 上执行）
@@ -93,7 +93,7 @@ neutrino.exe full.lab timing.lab output.f0 output.melspec output.wav model/MERRO
 
 - **Windows**：原生运行官方 Windows 版。完整渲染、时序/音高/动态编辑、工程保存与导出已在 Windows 11 + NVIDIA GPU + Tau v3.2.2 环境验证；详细环境与结果见[测试报告](docs/TEST-REPORT.md)。
 - **Linux**：官方提供 Linux（Ubuntu）/在线版，可将设置中的执行模式设为“原生”；如果使用 Windows 版，则设为 Wine。界面已在 WSL2 + WSLg 环境完成基本验证；原生引擎尚未在 Linux 实机验证（见测试报告）。
-- **macOS**：官方提供 Apple Silicon 版，选择其目录并使用“原生”即可。macOS 构建与运行尚未在实机验证。
+- **macOS**：官方提供 Apple Silicon 原生版。应用会设置运行时库路径并修正执行位；如果官方包被 Gatekeeper 拦截，先运行一次其 `Run.sh`。macOS 构建与运行尚未在实机验证。
 
 ## 已知限制
 
@@ -106,7 +106,7 @@ neutrino.exe full.lab timing.lab output.f0 output.melspec output.wav model/MERRO
 ## 许可与致谢
 
 - 本程序：MIT，见 [LICENSE](LICENSE)。
-- 品牌标志“TS for NEUTRINO”由项目作者制作，以 MIT 许可随项目发布，不单独限制商用。字母使用 MiSans SemiBold；MiSans 按小米的独立字体许可允许免费商用，详见 [MiSans 官方许可说明](https://hyperos.mi.com/font/en/faq/)。图标按尺寸使用 TS / TS for / 完整字标三种裁切，采用最近邻缩放。详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+- 应用图标“TS for NEUTRINO”由项目作者制作，以 MIT 许可随项目发布，不单独限制商用。字母使用 MiSans SemiBold；MiSans 按小米的独立字体许可允许免费商用，详见 [MiSans 官方许可说明](https://hyperos.mi.com/font/en/faq/)。图标在 16–64 px 使用 TS 字标，128 px 及以上使用完整字标，采用最近邻缩放。详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [图标说明](src/assets/icon/README.md)。
 - NEUTRINO 与歌声库：© SHACHI / STUDIO NEUTRINO 及各权利人；使用、发布作品前请阅读对应的最终用户许可协议（EULA）与歌声库许可。
 - Electron、React、Vite、Zustand、i18next、fast-xml-parser、pako、midi-file、lucide-react 等开源项目。
 

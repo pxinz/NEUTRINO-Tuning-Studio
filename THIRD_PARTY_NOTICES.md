@@ -1,8 +1,8 @@
 # Third-party notices
 
-## Brand artwork
+## Application icon
 
-The “TS for NEUTRINO” mark, including the compact “TS” variants used for the application icon, was created by the project author and is released under the same **MIT license** as this project. It is not displayed inside the application UI.
+The “TS for NEUTRINO” icon artwork, including the compact “TS” variants used for the application icon, was created by the project author and is released under the same **MIT license** as this project. It is not displayed inside the application UI.
 
 The lettering uses **MiSans SemiBold**. MiSans is a separate font by Xiaomi; it is not covered by this project's MIT license. MiSans permits free commercial use under its own terms, and this project credits MiSans as required. See the official MiSans FAQ and license information:
 
@@ -10,8 +10,7 @@ The lettering uses **MiSans SemiBold**. MiSans is a separate font by Xiaomi; it 
 
 The icon is intentionally responsive:
 
-- 16–48 px: compact “TS” mark
-- 64 px: “TS for” mark
+- 16–64 px: “TS” mark
 - 128–1024 px: full “TS for NEUTRINO” lockup
 
 All sizes are rasterized from the supplied artwork with nearest-neighbor scaling.

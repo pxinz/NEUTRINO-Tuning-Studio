@@ -304,7 +304,7 @@ export const ja: Record<string, string> = {
   'settings.runnerNative': 'ネイティブ',
   'settings.runnerWine': 'Wine（Windows 版）',
   'settings.wine': 'Wine コマンド',
-  'settings.wineHint': 'Linux/macOS で Windows 版 NEUTRINO を動かす場合に使用します。',
+  'settings.wineHint': 'Linux で Windows 版 NEUTRINO を動かす場合に使用します。',
   'settings.models': '検出した歌声ライブラリ',
   'settings.version': 'エンジンバージョン',
   'settings.audio.sampleRate': '出力サンプリングレート',

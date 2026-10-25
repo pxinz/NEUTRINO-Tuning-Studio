@@ -29,11 +29,13 @@ Detection checks `bin/` and the root for both executables, then reads
 and support-model capability.
 
 - Windows: executes the official Windows binaries directly.
-- Linux/macOS: if only a Windows `.exe` is present, the runner uses Wine. The
-  app converts absolute Unix paths to `Z:\...` Wine paths and keeps the
-  working directory at the NEUTRINO root, because the converter resolves
+- Linux: if only a Windows `.exe` is present, the runner can use Wine. The app
+  converts absolute Unix paths to `Z:\...` Wine paths and keeps the working
+  directory at the NEUTRINO root, because the converter resolves
   `settings/dic` relative to its working directory.
-- Native macOS/Linux builds are launched directly.
+- macOS: the official macOS package is launched directly. The app adds
+  `DYLD_LIBRARY_PATH=<root>/bin` and restores the executable bit when needed.
+- Native Linux builds are launched directly.
 
 ## CLI invocation
 

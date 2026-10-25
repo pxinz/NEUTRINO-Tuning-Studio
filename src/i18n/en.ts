@@ -311,7 +311,7 @@ export const en: Record<string, string> = {
   'settings.runnerNative': 'Native',
   'settings.runnerWine': 'Wine (Windows build)',
   'settings.wine': 'Wine command',
-  'settings.wineHint': 'Used on Linux/macOS when the installed NEUTRINO build is a Windows .exe.',
+  'settings.wineHint': 'Used on Linux when the installed NEUTRINO build is a Windows .exe.',
   'settings.models': 'Detected voice models',
   'settings.version': 'Engine version',
   'settings.audio.sampleRate': 'Output sample rate',

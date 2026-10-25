@@ -1,6 +1,6 @@
 # Verification report
 
-Date of verification: 2026-10-24 · build 1.1.1
+Date of verification: 2026-10-24 · build 1.1.2
 
 ## Windows host
 
@@ -36,9 +36,9 @@ Date of verification: 2026-10-24 · build 1.1.1
 | Log drawer with fixed note row height | PASS — note height 23 CSS px before/after opening log; vertical scrollbar appears |
 | Unsaved close prompt (save/discard/cancel) | PASS |
 | Packaged Windows app (unpacked) | PASS — launched via Playwright with a fresh user data directory |
-| Packaged Windows 1.1.1 real render | PASS — detected engine/models, rendered the demo, 21.6 s audio, no leading bar |
+| Packaged Windows 1.1.2 real render | PASS — detected engine/models, rendered the demo, 21.6 s audio, no leading bar |
 | Installer/portable artifacts | PASS — NSIS and portable EXE produced; associated 32 px icon verified |
-| Unit tests | PASS — 15 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics, phrase parsing/splicing, project phrase persistence) |
+| Unit tests | PASS — 18 Vitest tests (MusicXML round-trip, lead-in rest, timing, F0, dynamics, phrase parsing/splicing, project phrase persistence, native macOS runner and standard search paths) |
 | Playback alignment | PASS — rendered demo first voiced frame 0.01 s; timing starts `0 100000 pau`; no one-bar lead |
 | Light-mode render progress | PASS — running percentage computed color `rgb(15,23,42)` on `rgb(238,243,250)` |
 | Pencil drag | PASS — drag creates one note with extended duration |
@@ -79,8 +79,8 @@ load models : (vocoder model only)
 | Fixed piano-roll height and vertical scrollbar | PASS |
 | Log drawer open/close | PASS |
 | Packaged unpacked Linux app | PASS — launched under WSLg via Playwright |
-| AppImage 1.1.1 (115 MB) | PASS — launched with `APPIMAGE_EXTRACT_AND_RUN=1` under WSLg; light theme checked |
-| deb package 1.1.1 (89 MB) | PASS — built successfully with maintainer metadata |
+| AppImage 1.1.2 (115 MB) | PASS — launched with `APPIMAGE_EXTRACT_AND_RUN=1` under WSLg; light theme checked |
+| deb package 1.1.2 (89 MB) | PASS — built successfully with maintainer metadata |
 | Renderer console errors | none |
 
 The WSL environment used for GUI verification did not have NEUTRINO installed or
@@ -94,7 +94,7 @@ untested environment in the README.
 A cross-built **arm64 app zip** was produced locally on WSL with
 `@electron/packager`, then ad-hoc signed with `rcodesign`:
 
-`release/mac/NEUTRINO-Tuning-Studio-1.1.1-macOS-arm64-unsigned.zip`
+`release/mac/NEUTRINO-Tuning-Studio-1.1.2-macOS-arm64-unsigned.zip`
 
 This is a local build artifact; `release/` is not committed.
 
@@ -106,6 +106,13 @@ Inspected:
 - `app.asar` present; executable modes and `Open-Anyway.command` preserved;
 - `CodeDirectory` with `ADHOC` flag and resource seal.
 
+Static check against the official macOS Tau v3.2.2 distribution:
+
+- `bin/neutrino` and `bin/musicXMLtoLabel` are found as native executables;
+- the runner resolves to `native` on macOS;
+- `DYLD_LIBRARY_PATH` is set to `<NEUTRINO_ROOT>/bin` for the child process;
+- all five bundled models are detected.
+
 **Not executed on macOS**, not Developer ID signed, and not notarized. Gatekeeper
 handling and real NEUTRINO macOS integration therefore remain unverified. The
 native macOS workflow in `.github/workflows/build-macos.yml` is the recommended
@@ -114,8 +121,8 @@ on Windows (`Build for macOS is supported only on macOS`).
 
 ## Packaging
 
-- Windows: `NEUTRINO Tuning Studio Setup 1.1.1.exe` (NSIS) and
-  `NEUTRINO Tuning Studio 1.1.1.exe` (portable) are produced successfully.
+- Windows: `NEUTRINO Tuning Studio Setup 1.1.2.exe` (NSIS) and
+  `NEUTRINO Tuning Studio 1.1.2.exe` (portable) are produced successfully.
 - Linux: AppImage and deb were built in the WSL environment under
   `release/linux/`; both the unpacked app and the AppImage were launched under
   WSLg.
@@ -147,6 +154,7 @@ Tested on Tau v3.2.2 with sample1/MERROW:
   (Phrase re-render, experimental).
 
 Details: [INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
+
 
 
 

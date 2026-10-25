@@ -91,9 +91,13 @@ Audio is processed locally and is not uploaded by the app.
 
 ## Cross-platform process runner
 
-`electron/lib/neutrino.cjs` finds executables and chooses native vs Wine. Wine
-paths are converted to `Z:\...` and `WINEDEBUG=-all` is set. The converter is run
-with `cwd` set to the NEUTRINO root, because its dictionary lookup is relative.
+`electron/lib/neutrino.cjs` finds executables and chooses native vs Wine. Windows
+and macOS always use their native distribution. On Linux, if only a Windows
+`.exe` is present, Wine paths are converted to `Z:\...` and `WINEDEBUG=-all` is
+set. On macOS, the child environment includes
+`DYLD_LIBRARY_PATH=<root>/bin`, matching the official `Run.sh`. The converter is
+run with `cwd` set to the NEUTRINO root, because its dictionary lookup is
+relative.
 
 `electron/lib/render.cjs` constructs argument arrays, captures streams, maps
 progress, verifies output files and kills the process tree on cancel. It invokes

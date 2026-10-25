@@ -23,5 +23,5 @@ Open questions to resolve before implementation:
 
 - latency and transport sync for realtime preview;
 - DAW state persistence for a large F0 curve;
-- licensing and branding for a plugin named after NEUTRINO;
+- licensing and naming for a plugin named after NEUTRINO;
 - macOS notarisation and Windows signing for the wrapper.

@@ -6,11 +6,19 @@ const fs = require('node:fs');
   const root = path.join(__dirname, '..');
   const userData = path.join(root, 'scratch-phrase', `userdata-${Date.now()}`);
   fs.mkdirSync(userData, { recursive: true });
+  const sampleXml =
+    process.env.NT_SAMPLE_XML ||
+    (process.env.NEUTRINO_ROOT
+      ? path.join(process.env.NEUTRINO_ROOT, 'score', 'musicxml', 'sample1.musicxml')
+      : '');
+  if (!sampleXml) {
+    throw new Error('Set NT_SAMPLE_XML or NEUTRINO_ROOT to a NEUTRINO installation with sample1.musicxml.');
+  }
   const env = {
     ...process.env,
     NT_USER_DATA: userData,
     NT_TEST: '1',
-    NT_TEST_OPEN_PATH: String.raw`E:\Programs\NEUTRINO\score\musicxml\sample1.musicxml`,
+    NT_TEST_OPEN_PATH: sampleXml,
     NT_TEST_DIALOG_DIR: path.join(root, 'scratch-phrase', 'saved'),
   };
   delete env.ELECTRON_RUN_AS_NODE;

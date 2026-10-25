@@ -1,6 +1,6 @@
 {
   "name": "neutrino-tuning-studio",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A complete cross-platform tuning GUI for NEUTRINO Tau",
   "main": "electron/main.cjs",
   "author": {

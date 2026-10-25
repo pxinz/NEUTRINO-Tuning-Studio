@@ -131,8 +131,8 @@ export default function TopBar() {
 
   return (
     <header className="topbar">
-      <div className="brand brand-text-only" title="NEUTRINO Tuning Studio">
-        <div className="brand-text">
+      <div className="app-identity app-identity-text-only" title="NEUTRINO Tuning Studio">
+        <div className="app-identity-text">
           <strong>NEUTRINO</strong>
           <span>Tuning Studio</span>
         </div>

@@ -44,9 +44,9 @@ function candidateRoots() {
   if (process.env.NEUTRINO_ROOT) roots.push(expandHome(process.env.NEUTRINO_ROOT));
   const home = os.homedir();
   if (process.platform === 'win32') {
-    roots.push('E:\\Programs\\NEUTRINO', 'C:\\Program Files\\NEUTRINO', 'C:\\NEUTRINO');
+    roots.push('C:\\Program Files\\NEUTRINO', 'C:\\NEUTRINO');
     for (const drive of ['C', 'D', 'E', 'F', 'G', 'H']) {
-      roots.push(`${drive}:\\NEUTRINO`, `${drive}:\\Programs\\NEUTRINO`);
+      roots.push(`${drive}:\\NEUTRINO`);
     }
   } else {
     roots.push(
@@ -88,12 +88,41 @@ function findBinary(root, names, subdirs = ['bin', '', 'app', 'macos']) {
   return null;
 }
 
-function findBinaries(root) {
+function findBinaries(root, platform = process.platform) {
   if (!root || !dirExists(root)) return null;
-  const neutrino = findBinary(root, NEUTRINO_NAMES);
-  const converter = findBinary(root, CONVERTER_NAMES);
+  const nativeFirst = platform !== 'win32';
+  const neutrinoNames = nativeFirst
+    ? ['neutrino', 'NEUTRINO', 'neutrino.exe', 'NEUTRINO.exe']
+    : NEUTRINO_NAMES;
+  const converterNames = nativeFirst
+    ? ['musicXMLtoLabel', 'musicXMLToLabel', 'musicXMLtoLabel.exe', 'musicXMLToLabel.exe']
+    : CONVERTER_NAMES;
+  const neutrino = findBinary(root, neutrinoNames);
+  const converter = findBinary(root, converterNames);
   if (!neutrino && !converter) return null;
   return { neutrino, converter };
+}
+
+function nativeEnv(root, platform = process.platform) {
+  const env = { ...process.env };
+  if (platform === 'darwin') {
+    // The official macOS distribution ships dylibs in bin/ and its Run.sh
+    // exports DYLD_LIBRARY_PATH=$PWD/bin. Reproduce that for direct exec.
+    const bin = path.join(root, 'bin');
+    env.DYLD_LIBRARY_PATH = [bin, env.DYLD_LIBRARY_PATH].filter(Boolean).join(':');
+  }
+  return env;
+}
+
+function prepareNativeBinaries(binaries, platform = process.platform) {
+  if (platform !== 'darwin') return;
+  // Archives unpacked by third-party tools can lose the executable bit.
+  for (const executable of [binaries.neutrino, binaries.converter]) {
+    if (!executable) continue;
+    try {
+      fs.chmodSync(executable, 0o755);
+    } catch {}
+  }
 }
 
 function parseToml(text) {
@@ -196,9 +225,13 @@ function winePath(p) {
   return abs;
 }
 
-function resolveRunner({ runner, neutrinoPath, wineCommand }) {
+function resolveRunner({ runner, neutrinoPath, wineCommand, platform = process.platform }) {
   const isExe = /\.exe$/i.test(neutrinoPath || '');
-  if (process.platform === 'win32') return { runner: 'native', available: true };
+  // Windows and macOS use their native distributions. Wine is only relevant
+  // to Linux running a Windows build.
+  if (platform === 'win32' || platform === 'darwin') {
+    return { runner: 'native', available: true };
+  }
   if (runner === 'wine' || (runner !== 'native' && isExe)) {
     const wine = which(wineCommand || 'wine');
     return {
@@ -236,11 +269,12 @@ async function detectNeutrino(options = {}) {
       ok: false,
       root: options.root || '',
       models: [],
-      error: 'NEUTRINO installation was not found. Choose the folder that contains Run.bat.',
+      error: 'NEUTRINO installation was not found. Choose the folder that contains Run.bat or Run.sh.',
       candidates: [...seen].slice(0, 30),
     };
   }
 
+  prepareNativeBinaries(binaries);
   const runnerInfo = resolveRunner({
     runner: options.runner || 'auto',
     neutrinoPath: binaries.neutrino,
@@ -256,10 +290,14 @@ async function detectNeutrino(options = {}) {
       runnerInfo.runner === 'wine'
         ? [winePath(binaries.neutrino)]
         : [];
+    const env =
+      runnerInfo.runner === 'wine'
+        ? { ...process.env, WINEDEBUG: '-all' }
+        : nativeEnv(root);
     const res = await runAndCapture(cmd, args, {
       cwd: root,
       timeoutMs: 12000,
-      env: { ...process.env, WINEDEBUG: '-all' },
+      env,
     });
     banner = [res.stdout, res.stderr].filter(Boolean).join('\n').trim();
     const m = banner.match(/NEUTRINO\s*-\s*([^\r\n]+)/i);
@@ -295,7 +333,7 @@ async function detectNeutrino(options = {}) {
   };
 }
 
-function buildCommand(root, executable, args, runner, wineCommand) {
+function buildCommand(root, executable, args, runner, wineCommand, platform = process.platform) {
   if (runner === 'wine') {
     return {
       command: wineCommand || 'wine',
@@ -308,7 +346,7 @@ function buildCommand(root, executable, args, runner, wineCommand) {
     command: executable,
     args,
     cwd: root,
-    env: { ...process.env },
+    env: nativeEnv(root, platform),
   };
 }
 
@@ -328,6 +366,8 @@ module.exports = {
   detectNeutrino,
   buildCommand,
   resolveRunner,
+  nativeEnv,
+  prepareNativeBinaries,
   winePath,
   DISPLAY_NAMES,
   NEUTRINO_NAMES,

@@ -91,7 +91,7 @@ export default function WelcomeScreen() {
       </div>
 
       <header className="welcome-top">
-        <div className="welcome-brand welcome-wordmark">
+        <div className="welcome-wordmark">
           <strong>NEUTRINO</strong>
           <span>Tuning Studio</span>
         </div>
@@ -163,7 +163,7 @@ export default function WelcomeScreen() {
                 value={root}
                 placeholder={
                   appInfo?.platform === 'win32'
-                    ? 'E:\\Programs\\NEUTRINO'
+                    ? 'C:\\Program Files\\NEUTRINO'
                     : appInfo?.platform === 'darwin'
                       ? '/Applications/NEUTRINO'
                       : '/opt/NEUTRINO'

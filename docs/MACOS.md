@@ -62,6 +62,12 @@ audio devices, and NEUTRINO engine integration.
 
 ## NEUTRINO on macOS
 
-Use the official macOS (Apple Silicon) NEUTRINO package and point the app at the
-folder containing `Run.sh` and `model/`. The app does not bundle or redistribute
-the engine or voice libraries.
+Use the official macOS (Apple Silicon) NEUTRINO package. Point the app at the
+folder containing `Run.sh` and `model/`.
+
+The official package expects `DYLD_LIBRARY_PATH=$PWD/bin`; the app adds this to
+the child environment automatically. It also restores the executable bit if an
+archive was extracted by a tool that dropped it. If macOS blocks the downloaded
+binaries with a quarantine message, run the package's `Run.sh` once before
+selecting the folder in the studio. The app does not bundle or redistribute the
+engine or voice libraries.
