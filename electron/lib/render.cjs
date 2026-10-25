@@ -7,7 +7,7 @@ const { app } = require('electron');
 const { ensureDir, decodeBuffer, readWavInfo, sanitizeName } = require('./util.cjs');
 const { buildCommand } = require('./neutrino.cjs');
 const { parsePhraseList } = require('./phrases.cjs');
-const { splicePhraseWav } = require('./wav.cjs');
+const { parseWav, splicePhraseWav } = require('./wav.cjs');
 
 function nowMs() {
   return Date.now();
@@ -227,6 +227,21 @@ class RenderManager {
       return this.runPhrase(id, payload, files, root, settings, neutrinoPath, runner, wineCommand);
     }
 
+    let timingBasePath = null;
+    if (
+      mode === 'timing' &&
+      Array.isArray(payload.timingWindows) &&
+      payload.timingWindows.length &&
+      fs.existsSync(files.wav)
+    ) {
+      timingBasePath = path.join(files.workspace, 'output.before-timing.wav');
+      try {
+        fs.copyFileSync(files.wav, timingBasePath);
+      } catch {
+        timingBasePath = null;
+      }
+    }
+
     if (mode === 'full') {
       if (!converterPath) throw new Error('musicXMLtoLabel executable was not found.');
       this.progress(id, 2, 'labels', 'Converting MusicXML to labels');
@@ -285,6 +300,54 @@ class RenderManager {
     }
     if (!fs.existsSync(files.wav)) {
       throw new Error('NEUTRINO finished without producing a WAV file.');
+    }
+    if (timingBasePath) {
+      try {
+        const base = fs.readFileSync(timingBasePath);
+        const next = fs.readFileSync(files.wav);
+        const baseWav = parseWav(base);
+        const nextWav = parseWav(next);
+        if (
+          baseWav &&
+          nextWav &&
+          baseWav.frames === nextWav.frames &&
+          baseWav.sampleRate === nextWav.sampleRate &&
+          baseWav.channels === nextWav.channels &&
+          baseWav.bitsPerSample === nextWav.bitsPerSample &&
+          baseWav.audioFormat === nextWav.audioFormat
+        ) {
+          const windows = payload.timingWindows
+            .map((window) => ({
+              startFrame: Math.max(0, Math.min(nextWav.frames, Math.round(Number(window.startFrame)))),
+              endFrame: Math.max(0, Math.min(nextWav.frames, Math.round(Number(window.endFrame)))),
+            }))
+            .filter((window) => window.endFrame > window.startFrame);
+          if (windows.length) {
+            const replacements = windows.map((window) => ({
+              ...window,
+              sourceStartFrame: window.startFrame,
+              sourceEndFrame: window.endFrame,
+              buffer: next,
+            }));
+            const spliced = splicePhraseWav(base, replacements, { crossfadeMs: 30 });
+            const tempWav = path.join(files.workspace, 'output.timing-dirty.wav');
+            fs.writeFileSync(tempWav, spliced);
+            fs.renameSync(tempWav, files.wav);
+            this.log(
+              id,
+              `[studio] timing dirty splice windows=${windows.map((w) => `${w.startFrame}-${w.endFrame}`).join(', ')}`,
+            );
+          }
+        } else {
+          this.log(id, '[studio] timing WAV length/format changed; keeping full timing take.');
+        }
+      } catch (err) {
+        this.log(id, `[studio] timing dirty splice skipped: ${(err && err.message) || err}`);
+      } finally {
+        try {
+          fs.rmSync(timingBasePath, { force: true });
+        } catch {}
+      }
     }
 
     const wavInfo = readWavInfo(files.wav);

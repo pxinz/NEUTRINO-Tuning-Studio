@@ -471,6 +471,7 @@ export const en: Record<string, string> = {
   'notifications.pitchRendered': 'Waveform re-synthesized from the edited pitch curve.',
   'notifications.phraseRendered': 'Changed frame windows re-synthesized and spliced into the take.',
   'notifications.phraseFallback': 'Dirty-region re-render did not finish; the full vocal was rendered instead.',
+  'notifications.noAudioChanges': 'No audio-affecting changes. Dynamics are applied during preview and export.',
   'notifications.settingsSaved': 'Settings saved.',
   'notifications.renderCanceled': 'Render canceled.',
   'notifications.referenceLoaded': 'Reference track loaded.',

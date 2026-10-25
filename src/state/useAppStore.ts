@@ -57,6 +57,7 @@ import {
   warpF0ByTiming,
 } from '../lib/pitch';
 import {
+  dirtyTimingWindows,
   parseTimingText,
   serializeTiming,
   timingHash,
@@ -1863,19 +1864,29 @@ export const useAppStore = create<AppState>((set, get) => {
       const scoreHash = getScoreHash(s.project.score);
       const synthSig = renderSignature(s.project.synth);
       const rendered = s.project.render;
+      const currentTimingHash = s.timing ? timingHash(s.timing.text) : '';
+      const timingChanged = Boolean(s.timing && rendered && rendered.timingHash !== currentTimingHash);
       let mode: RenderMode;
       if (!rendered || rendered.scoreHash !== scoreHash || rendered.synthHash !== synthSig) {
         mode = 'full';
-      } else if (
-        s.timingEdited ||
-        (s.timing && rendered.timingHash !== timingHash(s.timing.text))
-      ) {
+      } else if (timingChanged) {
         mode = 'timing';
       } else if (s.pitchEdited) {
         mode = 'vocode';
       } else {
-        mode = 'full';
+        s.pushToast('info', i18n.t('notifications.noAudioChanges'));
+        return;
       }
+      const timingWindows =
+        mode === 'timing' && s.timingBase && s.timing ? dirtyTimingWindows(s.timingBase, s.timing) : null;
+      const timingWindowPlan =
+        timingWindows &&
+        timingWindows.length > 0 &&
+        timingWindows.length <= 8 &&
+        timingWindows.reduce((sum, window) => sum + (window.endFrame - window.startFrame), 0) <=
+          Math.max(1, s.audio.duration * 100) * 0.5
+          ? timingWindows
+          : null;
 
       // Stage-level vocode is already incremental. If only a few phrases changed,
       // use NEUTRINO's `-p` single-phrase mode and splice the phrase WAV back in.
@@ -2000,6 +2011,7 @@ export const useAppStore = create<AppState>((set, get) => {
             ...basePayload,
             mode: 'timing',
             timingText: s.timing.text,
+            timingWindows: timingWindowPlan || undefined,
           });
           const timing = timingFromText(result.timingText || s.timing.text, scoreHash, true);
           const base = result.f0 ? parseF0(result.f0) : null;

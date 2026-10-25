@@ -122,9 +122,10 @@ combined with skip flags, the F0/melspec inputs must be trimmed to the phrase.
 
 This was verified. Pitch-only dirty-region splicing is used automatically when a
 few phrases change; per-phrase changed-frame windows (including multiple windows
-inside one phrase) are spliced into the previous take. It is experimental and
-falls back to a full vocode. Timing or score changes still use the full render
-path. Measurements and caveats are in
+inside one phrase) are spliced into the previous take. Timing-boundary edits use
+the full timing engine pass but experimentally splice only moved-boundary audio
+windows over the previous take. Score changes still use the full render path.
+Measurements and caveats are in
 [INCREMENTAL-RENDERING.md](INCREMENTAL-RENDERING.md).
 
 ## Render modes
@@ -136,7 +137,9 @@ The UI chooses one of four modes from hashes stored in the project:
 2. **Timing** — only timing was edited. Runs `--skip-timing` to keep the
    boundary edits, regenerates F0/melspec/WAV. If pitch was also edited, the
    app warps the pitch curve from the old phoneme timeline to the new one,
-   writes it, and performs a second vocoder-only pass.
+   writes it, and performs a second vocoder-only pass. Experimentally, moved
+   boundary windows are spliced over the previous take when its WAV layout is
+   unchanged.
 3. **Vocode** — only pitch changed. Runs with all three skip flags.
 4. **Phrase / dirty region** — pitch changed, at most eight phrases are affected,
    and changed F0 frames cover at most 50% of the song. Slices F0/melspec, runs

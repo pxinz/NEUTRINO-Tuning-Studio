@@ -41,6 +41,57 @@ export function timingHash(text: string): string {
   return hashString(text);
 }
 
+export interface TimingDirtyWindow {
+  startFrame: number;
+  endFrame: number;
+  changedBoundaries: number;
+}
+
+/**
+ * Compare two phoneme timelines and return time windows whose boundaries moved.
+ * Returns null when the phoneme structure changed and a full timing render is
+ * safer. Windows are in 100 fps frames.
+ */
+export function dirtyTimingWindows(
+  base: TimingData | null,
+  current: TimingData | null,
+  guardSeconds = 0.05,
+): TimingDirtyWindow[] | null {
+  if (!base || !current) return null;
+  if (base.phonemes.length !== current.phonemes.length) return null;
+  for (let i = 0; i < base.phonemes.length; i++) {
+    if (base.phonemes[i].phoneme !== current.phonemes[i].phoneme) return null;
+  }
+  const baseBoundaries = timingBoundaries(base.phonemes);
+  const currentBoundaries = timingBoundaries(current.phonemes);
+  if (baseBoundaries.length !== currentBoundaries.length) return null;
+  const guard = Math.max(0, guardSeconds);
+  const raw: Array<{ start: number; end: number; changed: number }> = [];
+  for (let i = 0; i < baseBoundaries.length; i++) {
+    const a = baseBoundaries[i];
+    const b = currentBoundaries[i];
+    if (Math.abs(a - b) < 0.0005) continue;
+    raw.push({ start: Math.min(a, b), end: Math.max(a, b), changed: 1 });
+  }
+  if (!raw.length) return [];
+  raw.sort((a, b) => a.start - b.start);
+  const merged: typeof raw = [];
+  for (const item of raw) {
+    const last = merged[merged.length - 1];
+    if (last && item.start <= last.end + guard) {
+      last.end = Math.max(last.end, item.end);
+      last.changed += item.changed;
+    } else {
+      merged.push({ ...item });
+    }
+  }
+  return merged.map((item) => ({
+    startFrame: Math.max(0, Math.round((item.start - guard) * 100)),
+    endFrame: Math.max(1, Math.round((item.end + guard) * 100)),
+    changedBoundaries: item.changed,
+  }));
+}
+
 export function timingBoundaries(phonemes: Phoneme[]): number[] {
   if (!phonemes.length) return [];
   return [phonemes[0].start, ...phonemes.map((p) => p.end)];

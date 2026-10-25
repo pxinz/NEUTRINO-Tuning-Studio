@@ -3,7 +3,7 @@ import { createDemoScore, getScoreHash, normalizeScore, scoreEndBeat, secondsToB
 import { createProject, decodeProject, encodeProject } from '../src/lib/project';
 import { exportMusicXml, importMusicXml } from '../src/lib/musicxml';
 import { decodeF0, encodeF0, parseF0, transposeF0, warpF0ByTiming } from '../src/lib/pitch';
-import { parseTimingText, serializeTiming, updateBoundary } from '../src/lib/timing';
+import { dirtyTimingWindows, parseTimingText, serializeTiming, updateBoundary } from '../src/lib/timing';
 import { gainAt, normalizeDynamics } from '../src/lib/dynamics';
 
 describe('score and MusicXML', () => {
@@ -91,6 +91,28 @@ describe('F0 data', () => {
     expect(up[0]).toBeCloseTo(200);
     expect(up[1]).toBe(0);
     expect(up[2]).toBeCloseTo(400);
+  });
+
+  it('finds only the timing boundary windows that moved', () => {
+    const base = parseTimingText('0 10000000 a\n10000000 20000000 b\n20000000 30000000 c\n')!;
+    const current = parseTimingText(serializeTiming(updateBoundary(base.phonemes, 1, 1.2)))!;
+    const windows = dirtyTimingWindows(base, current);
+    expect(windows).toHaveLength(1);
+    expect(windows![0]).toMatchObject({
+      startFrame: 95,
+      endFrame: 125,
+      changedBoundaries: 1,
+    });
+  });
+
+  it('merges close timing windows and rejects phoneme structure changes', () => {
+    const base = parseTimingText('0 10000000 a\n10000000 20000000 b\n20000000 30000000 c\n')!;
+    const moved = updateBoundary(updateBoundary(base.phonemes, 1, 1.1), 2, 1.12);
+    const current = parseTimingText(serializeTiming(moved))!;
+    const windows = dirtyTimingWindows(base, current);
+    expect(windows).toHaveLength(1);
+    expect(windows![0].changedBoundaries).toBe(2);
+    expect(dirtyTimingWindows(base, parseTimingText('0 10000000 a\n10000000 30000000 d\n')!)).toBeNull();
   });
 
   it('warps a pitch curve across equal-length timing edits', () => {

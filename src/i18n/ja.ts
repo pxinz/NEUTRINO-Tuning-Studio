@@ -460,6 +460,7 @@ export const ja: Record<string, string> = {
   'notifications.pitchRendered': 'ピッチに合わせて波形を再合成しました。',
   'notifications.phraseRendered': 'ピッチが変わったフレーム区間を再合成し、元の音声に継ぎ合わせました。',
   'notifications.phraseFallback': 'ダーティ領域の再レンダリングを完了できなかったため、全体をレンダリングし直しました。',
+  'notifications.noAudioChanges': '音声に影響する変更はありません。ダイナミクスは試聴と書き出し時に適用されます。',
   'notifications.settingsSaved': '設定を保存しました。',
   'notifications.renderCanceled': 'レンダリングを中止しました。',
   'notifications.referenceLoaded': '参考音源を読み込みました。',

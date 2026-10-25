@@ -7,9 +7,16 @@ The app performs two kinds of incremental rendering:
 
 - **Stage-level**: reuse `timing.lab`, `f0` and `melspec`, then run only the
   remaining stages.
-- **Dirty-region**: when eligible, re-vocode affected phrases and splice only
-  the changed F0 frame windows back into the existing take. Unchanged audio
+- **Dirty-region (pitch)**: when eligible, re-vocode affected phrases and splice
+  only the changed F0 frame windows back into the existing take. Unchanged audio
   inside the same phrase is preserved; separated edits become separate windows.
+- **Dirty-region (timing)**: when timing boundaries move, compare the base and
+  edited phoneme boundary arrays, run the normal full timing engine pass, then
+  splice only the moved-boundary windows from the new full WAV over the old take.
+  The engine cost is still full timing; the audio replacement is dirty-region.
+- **Dynamics only**: no engine render. Dynamics are applied during preview and
+  export, so a render click with no score/timing/pitch changes now reports that
+  there is no audio-affecting change instead of doing a full re-render.
 
 ## CLI support
 
@@ -102,18 +109,25 @@ quality should be auditioned.
   real-engine Playwright test imports sample1, changes pitch in phrase 1, and
   verifies the changed-sample boundaries.
 
-Measured on sample1 (43.2 s, 48 kHz): the edit produced a **1.79 s** dirty
-window (frames 500–679). After the splice, **85,756 samples changed inside the
-window and 0 samples changed outside it**; the previous whole-phrase splice
-changed roughly 434,000 samples. The UI label is **脏区重渲染（实验性）/
-Dirty-region re-render (experimental)**. This remains a feasibility experiment,
-not a release feature.
+Measured on sample1 (43.2 s, 48 kHz):
+
+- Pitch edit: a **1.79 s** dirty window (frames 500–679); **85,756 samples
+  changed inside, 0 outside**. The previous whole-phrase splice changed roughly
+  434,000 samples.
+- Timing boundary edit: a **0.32 s** dirty window (frames 325–357); **15,303
+  samples changed inside, 0 outside**. The timing engine pass was still full;
+  only the audio replacement was dirty-region.
+
+The UI labels this **脏区重渲染（实验性）/ Dirty-region re-render
+(experimental)**. This remains a feasibility experiment, not a release feature.
 
 ## Current render paths
 
 1. **Full** — score, synth settings, model, or no render; regenerates labels,
    timing, F0, melspec, WAV.
-2. **Timing** — timing edited; `--skip-timing`, then regenerates F0/melspec/WAV.
+2. **Timing** — timing boundaries edited; `--skip-timing`, then regenerates
+   F0/melspec/WAV. If the WAV length/format is unchanged, only the moved
+   boundary windows are spliced over the previous take (experimental).
 3. **Vocode** — pitch edited but phrase mode is unavailable or not beneficial;
    `--skip-timing --skip-f0 --skip-melspec`.
 4. **Dirty region** — pitch edited and at most 8 changed phrases cover at most
@@ -121,9 +135,11 @@ not a release feature.
 
 ## Remaining work
 
-- Timing edits change phrase lengths and shift later frame offsets, so they still
-  require a full rebuild.
+- Timing edits still require the **full timing engine pass**; only the final
+  audio splice is dirty-region. A true per-phrase timing render would need
+  validation that `-p` accepts edited boundaries and regenerates matching
+  phrase F0/melspec.
 - Score edits can renumber phrases and change the label file, so they still
   require a full render.
-- The phrase boundary crossfade should be auditioned on more material before the
-  feature leaves experimental status.
+- The phrase/window boundary crossfade should be auditioned on more material
+  before the feature leaves experimental status.

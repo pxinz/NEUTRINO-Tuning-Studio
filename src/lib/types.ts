@@ -237,6 +237,7 @@ export interface RenderStartPayload {
   phrases?: PhraseInfo[];
   phraseIndices?: number[];
   phraseRanges?: Array<{ index: number; startFrame: number; endFrame: number }>;
+  timingWindows?: Array<{ startFrame: number; endFrame: number }>;
   crossfadeMs?: number;
 }
 

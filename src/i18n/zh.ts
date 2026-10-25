@@ -460,6 +460,7 @@ export const zh: Record<string, string> = {
   'notifications.pitchRendered': '已根据所绘制的音高重新合成波形。',
   'notifications.phraseRendered': '已重新合成音高变化的帧窗口，并拼回整曲。',
   'notifications.phraseFallback': '脏区重渲染未完成，已改为完整渲染。',
+  'notifications.noAudioChanges': '没有影响音频的修改；动态包络已在试听和导出时应用。',
   'notifications.settingsSaved': '设置已保存。',
   'notifications.renderCanceled': '渲染已取消。',
   'notifications.referenceLoaded': '参考曲已载入。',
