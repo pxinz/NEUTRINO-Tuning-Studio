@@ -30,7 +30,28 @@
 - 逐样本比较只适合验证“增量是否保留旧 take”，不适合直接判断完整重渲与增量的听感差异。
 - 目前仍需要人工试听确认 crossfade 边界，不能仅凭相关指标判定通过。
 
+## 频谱观察
+
+![5–7 s A/B/C 与 B−C](spectrograms/spectrogram-diff-5-7s.png)
+
+![11–13 s A/B/C 与 B−C](spectrograms/spectrogram-diff-11-13s.png)
+
+![高频段 B−C 差异](spectrograms/high-band-diff.png)
+
+关键观察：
+
+- **11–13 s 的 B 与 A 逐样本完全相同**；这一段如果听出电音感，它来自原始 take，不是增量拼接引入的。
+- **6–8 s 的 B 与 A 只在 6.00–6.79 s 不同**；6.79 s 之后逐样本相同。6.79 s 是窗口边界。
+- 频谱没有硬性低通：A/B/C 都在约 18–20 kHz 自然滚降。
+- 相对 C（完整重渲），B 在 12–20 kHz 确实更暗：
+  - 5–6.79 s：12–16 kHz **−1.85 dB**，16–20 kHz **−1.51 dB**
+  - 6.79–8 s：12–16 kHz **−3.52 dB**
+  - 11–13 s：12–16 kHz **−2.04 dB**，16–20 kHz **−1.93 dB**
+- 因此“高频被砍”主要是 **B 相对 C** 的差异，而不是拼接时对整段做了低通。窗口外 B 就是 A，C 自己重新生成了更亮的高频/不同相位。
+- B−C 的频谱差异呈正负交替，符合声码器相位不稳定的特征；边界处仍需听感确认。
+
 生成/分析脚本：
 
 - `scripts/e2e-full-vs-incremental.cjs`
 - `scripts/compare-renders.py`
+- `spectrograms/band-metrics.json`、`spectrograms/metrics.json`
